@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Recipe Clipper</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Toast -->
+  <div id="toast" class="toast"></div>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-inner">
+      <span class="header-title">Recipe Clipper</span>
+      <span id="auth-header-area">
+        <button id="btn-theme" class="btn-link" onclick="toggleTheme()" style="margin-right:14px;">Light</button>
+        <button id="btn-header-sign-in" class="btn-link" onclick="showView('auth')">Sign In</button>
+        <span id="signed-in-header" style="display:none;">
+          <button class="btn-link" onclick="signOut()">Sign Out</button>
+        </span>
+      </span>
+    </div>
+  </div>
+
+  <!-- ============ AUTH VIEW ============ -->
+  <div id="view-auth" class="view" style="display:none;">
+    <div class="container">
+      <h2 id="auth-heading">Sign In</h2>
+      <div class="form-group">
+        <label for="auth-email">Email</label>
+        <input type="email" id="auth-email" placeholder="you@example.com">
+      </div>
+      <div class="form-group">
+        <label for="auth-password">Password</label>
+        <input type="password" id="auth-password" placeholder="Password">
+      </div>
+      <div id="auth-error" class="error-msg"></div>
+      <button id="btn-auth-submit" class="btn-primary btn-block" onclick="submitAuth()">Sign In</button>
+      <p class="text-center" style="margin-top:16px;">
+        <span id="auth-toggle-text">No account?</span>
+        <button class="btn-link" id="btn-auth-toggle" onclick="toggleAuthMode()">Create one</button>
+      </p>
+      <p class="text-center">
+        <button class="btn-link" onclick="showView('list')">Cancel</button>
+      </p>
+    </div>
+  </div>
+
+  <!-- ============ LIST VIEW ============ -->
+  <div id="view-list" class="view">
+    <div class="container">
+      <div class="search-bar">
+        <input type="text" id="search-input" placeholder="Search recipes..." oninput="filterRecipes()">
+      </div>
+      <div id="recipe-list">
+        <div class="empty-state" id="empty-state">
+          <p>No recipes yet.</p>
+          <p id="empty-auth-msg">Sign in to start saving recipes.</p>
+        </div>
+      </div>
+      <button id="btn-add" class="btn-fab" onclick="startAddRecipe()">+</button>
+    </div>
+  </div>
+
+  <!-- ============ ADD/EDIT VIEW ============ -->
+  <div id="view-edit" class="view" style="display:none;">
+    <div class="container">
+      <h2 id="edit-heading">Add Recipe</h2>
+
+      <div class="extract-section">
+        <label for="extract-url">Paste a recipe URL</label>
+        <input type="url" id="extract-url" placeholder="https://allrecipes.com/...">
+        <button class="btn-accent btn-block" id="btn-extract" onclick="extractRecipe()">Extract Recipe</button>
+        <div id="extract-status" class="extract-status"></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="form-group">
+        <label for="edit-title">Title *</label>
+        <input type="text" id="edit-title" placeholder="Recipe title">
+      </div>
+      <div class="form-row">
+        <div class="form-group half">
+          <label for="edit-servings">Servings</label>
+          <input type="text" id="edit-servings" placeholder="4">
+        </div>
+        <div class="form-group half">
+          <label for="edit-prep">Prep Time</label>
+          <input type="text" id="edit-prep" placeholder="15 min">
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="edit-cook">Cook Time</label>
+        <input type="text" id="edit-cook" placeholder="45 min">
+      </div>
+      <div class="form-group">
+        <label for="edit-ingredients">Ingredients (one per line)</label>
+        <textarea id="edit-ingredients" rows="8" placeholder="1 lb ground beef&#10;1 can kidney beans&#10;..."></textarea>
+      </div>
+      <div class="form-group">
+        <label for="edit-instructions">Instructions (one step per line)</label>
+        <textarea id="edit-instructions" rows="8" placeholder="Step 1...&#10;Step 2...&#10;..."></textarea>
+      </div>
+      <div class="form-group">
+        <label for="edit-tags">Tags (comma separated)</label>
+        <input type="text" id="edit-tags" placeholder="dinner, meal-prep, quick">
+      </div>
+      <div class="form-group">
+        <label for="edit-notes">Notes</label>
+        <textarea id="edit-notes" rows="3" placeholder="Personal notes..."></textarea>
+      </div>
+      <div class="form-group">
+        <label for="edit-source">Source URL</label>
+        <input type="url" id="edit-source" placeholder="https://...">
+      </div>
+
+      <button class="btn-primary btn-block" onclick="saveRecipe()">Save Recipe</button>
+      <button class="btn-secondary btn-block" onclick="cancelEdit()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- ============ DETAIL VIEW ============ -->
+  <div id="view-detail" class="view" style="display:none;">
+    <div class="container">
+      <button class="btn-link" onclick="showView('list')">&larr; Back</button>
+      <h1 id="detail-title"></h1>
+      <div id="detail-meta" class="detail-meta"></div>
+      <div id="detail-tags" class="detail-tags"></div>
+
+      <h3>Ingredients</h3>
+      <ul id="detail-ingredients"></ul>
+
+      <h3>Instructions</h3>
+      <ol id="detail-instructions"></ol>
+
+      <div id="detail-notes-section" style="display:none;">
+        <h3>Notes</h3>
+        <p id="detail-notes"></p>
+      </div>
+
+      <div id="detail-source-section" style="display:none;">
+        <p><a id="detail-source" href="#" target="_blank">View Original Recipe</a></p>
+      </div>
+
+      <div class="detail-actions">
+        <button class="btn-accent" onclick="editCurrentRecipe()">Edit</button>
+        <button class="btn-danger" onclick="deleteCurrentRecipe()">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
