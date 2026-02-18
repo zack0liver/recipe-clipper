@@ -57,6 +57,9 @@
       <div class="search-bar">
         <input type="text" id="search-input" placeholder="Search recipes..." oninput="filterRecipes()">
       </div>
+      <div id="filter-bar" style="display:none;">
+        <button id="btn-favorites-filter" class="btn-filter" onclick="toggleFavoritesFilter()">Favorites</button>
+      </div>
       <div id="recipe-list">
         <div class="empty-state" id="empty-state">
           <p>No recipes yet.</p>
@@ -129,6 +132,10 @@
   <div id="view-detail" class="view" style="display:none;">
     <div class="container">
       <button class="btn-link" onclick="showView('list')">&larr; Back</button>
+      <div class="detail-top-bar">
+        <button id="btn-favorite" class="btn-fav-toggle" onclick="toggleFavorite()">Favorite</button>
+        <button id="btn-textsize" class="btn-link btn-textsize" onclick="toggleTextSize()">A+</button>
+      </div>
       <h1 id="detail-title"></h1>
       <div id="detail-meta" class="detail-meta"></div>
       <div id="detail-tags" class="detail-tags"></div>

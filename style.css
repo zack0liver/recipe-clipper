@@ -419,6 +419,87 @@ h3 { font-size: 18px; margin: 20px 0 10px 0; color: #5db07a; }
   clear: both;
 }
 
+/* Detail top bar (favorite + text size, sits between Back and title) */
+.detail-top-bar {
+  overflow: hidden;
+  margin: 12px 0 16px 0;
+}
+
+.btn-fav-toggle {
+  float: left;
+  background: transparent;
+  border: 1px solid #5db07a;
+  color: #5db07a;
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 15px;
+  cursor: pointer;
+  -webkit-appearance: none;
+}
+
+.btn-fav-toggle.is-fav {
+  background: #5db07a;
+  color: #ffffff;
+}
+
+.btn-textsize {
+  float: right;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 34px;
+}
+
+/* Favorites filter button */
+.btn-filter {
+  display: inline-block;
+  padding: 7px 16px;
+  background: transparent;
+  color: #5db07a;
+  border: 1px solid #5db07a;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  margin-bottom: 12px;
+  -webkit-appearance: none;
+}
+
+.btn-filter-active {
+  background: #5db07a;
+  color: #ffffff;
+}
+
+/* Large text mode for detail view (~1.4x scale) */
+#view-detail.large-text h1 {
+  font-size: 34px;
+}
+
+#view-detail.large-text h3 {
+  font-size: 26px;
+}
+
+#view-detail.large-text .detail-meta {
+  font-size: 21px;
+}
+
+#view-detail.large-text .detail-tags span {
+  font-size: 18px;
+  padding: 6px 14px;
+}
+
+#view-detail.large-text #detail-ingredients li,
+#view-detail.large-text #detail-instructions li {
+  font-size: 22px;
+  margin-bottom: 12px;
+}
+
+#view-detail.large-text #detail-notes {
+  font-size: 22px;
+}
+
+#view-detail.large-text #detail-source {
+  font-size: 22px;
+}
+
 /* ============================================================
    LIGHT MODE
    ============================================================ */
@@ -513,4 +594,24 @@ body.light-mode .loading-text {
 
 body.light-mode .error-msg {
   color: #cc2222;
+}
+
+body.light-mode .btn-fav-toggle {
+  color: #4a9668;
+  border-color: #4a9668;
+}
+
+body.light-mode .btn-fav-toggle.is-fav {
+  background: #4a9668;
+  color: #ffffff;
+}
+
+body.light-mode .btn-filter {
+  color: #4a9668;
+  border-color: #4a9668;
+}
+
+body.light-mode .btn-filter-active {
+  background: #4a9668;
+  color: #ffffff;
 }

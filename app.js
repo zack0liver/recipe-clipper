@@ -18,6 +18,8 @@ var currentRecipeId = null;
 var editingRecipeId = null;
 var authMode = 'signin';  // 'signin' or 'signup'
 var currentView = 'list';
+var showFavoritesOnly = false;
+var detailLargeText = false;
 
 // ---- Init ----
 (function init() {
@@ -35,6 +37,13 @@ var currentView = 'list';
     document.body.className = 'light-mode';
     document.documentElement.style.background = '#f4f4ee';
     document.getElementById('btn-theme').textContent = 'Dark';
+  }
+
+  // Restore text size preference
+  if (localStorage.getItem('rc_textsize') === 'large') {
+    detailLargeText = true;
+    var detailEl = document.getElementById('view-detail');
+    detailEl.className = (detailEl.className ? detailEl.className + ' ' : '') + 'large-text';
   }
 
   updateAuthUI();
@@ -155,10 +164,78 @@ function submitAuth() {
 function signOut() {
   currentUser = null;
   recipes = [];
+  showFavoritesOnly = false;
+  var filterBtn = document.getElementById('btn-favorites-filter');
+  if (filterBtn) { filterBtn.textContent = 'Favorites'; filterBtn.className = 'btn-filter'; }
   localStorage.removeItem('rc_user');
   updateAuthUI();
   showView('list');
   showToast('Signed out');
+}
+
+function toggleTextSize() {
+  var viewEl = document.getElementById('view-detail');
+  var btn = document.getElementById('btn-textsize');
+  if (detailLargeText) {
+    viewEl.className = viewEl.className.replace('large-text', '').replace(/^\s+|\s+$/g, '');
+    detailLargeText = false;
+    localStorage.setItem('rc_textsize', 'normal');
+    btn.textContent = 'A+';
+  } else {
+    viewEl.className = (viewEl.className ? viewEl.className + ' ' : '') + 'large-text';
+    detailLargeText = true;
+    localStorage.setItem('rc_textsize', 'large');
+    btn.textContent = 'A-';
+  }
+}
+
+function toggleFavorite() {
+  if (!currentRecipeId || !currentUser) return;
+  var recipe = null;
+  for (var i = 0; i < recipes.length; i++) {
+    if (recipes[i].id === currentRecipeId) { recipe = recipes[i]; break; }
+  }
+  if (!recipe) return;
+  recipe.favorite = !recipe.favorite;
+  updateFavoriteButton(recipe.favorite);
+  refreshTokenIfNeeded(function() {
+    var url = recipesPath() + '/' + currentRecipeId + '?updateMask.fieldPaths=favorite';
+    var patch = { fields: { favorite: { booleanValue: recipe.favorite } } };
+    xhrPatch(url, JSON.stringify(patch), currentUser.idToken, function(err) {
+      if (err) {
+        recipe.favorite = !recipe.favorite;
+        updateFavoriteButton(recipe.favorite);
+        showToast('Could not update favorite');
+      } else {
+        showToast(recipe.favorite ? 'Added to favorites' : 'Removed from favorites');
+      }
+    });
+  });
+}
+
+function updateFavoriteButton(isFav) {
+  var btn = document.getElementById('btn-favorite');
+  if (!btn) return;
+  if (isFav) {
+    btn.textContent = 'Unfavorite';
+    btn.className = 'btn-fav-toggle is-fav';
+  } else {
+    btn.textContent = 'Favorite';
+    btn.className = 'btn-fav-toggle';
+  }
+}
+
+function toggleFavoritesFilter() {
+  showFavoritesOnly = !showFavoritesOnly;
+  var btn = document.getElementById('btn-favorites-filter');
+  if (showFavoritesOnly) {
+    btn.textContent = 'All Recipes';
+    btn.className = 'btn-filter btn-filter-active';
+  } else {
+    btn.textContent = 'Favorites';
+    btn.className = 'btn-filter';
+  }
+  renderRecipeList();
 }
 
 function toggleTheme() {
@@ -183,16 +260,19 @@ function updateAuthUI() {
   var emptyAuthMsg = document.getElementById('empty-auth-msg');
   var fab = document.getElementById('btn-add');
 
+  var filterBar = document.getElementById('filter-bar');
   if (currentUser) {
     signInBtn.style.display = 'none';
     signedInArea.style.display = 'inline';
     if (emptyAuthMsg) emptyAuthMsg.style.display = 'none';
     if (fab) fab.style.display = 'block';
+    if (filterBar) filterBar.style.display = 'block';
   } else {
     signInBtn.style.display = 'inline';
     signedInArea.style.display = 'none';
     if (emptyAuthMsg) emptyAuthMsg.style.display = 'block';
     if (fab) fab.style.display = 'none';
+    if (filterBar) filterBar.style.display = 'none';
   }
 }
 
@@ -378,6 +458,7 @@ function recipeToFirestoreFields(r) {
   fields.notes = { stringValue: r.notes || '' };
   fields.createdAt = { integerValue: String(r.createdAt || Date.now()) };
   fields.updatedAt = { integerValue: String(r.updatedAt || Date.now()) };
+  fields.favorite = { booleanValue: r.favorite === true };
 
   // Arrays
   var ingValues = [];
@@ -420,7 +501,8 @@ function firestoreDocToRecipe(doc) {
     updatedAt: fsInt(f.updatedAt),
     ingredients: fsArr(f.ingredients),
     instructions: fsArr(f.instructions),
-    tags: fsArr(f.tags)
+    tags: fsArr(f.tags),
+    favorite: fsBool(f.favorite)
   };
 }
 
@@ -431,6 +513,10 @@ function fsStr(val) {
 function fsInt(val) {
   if (val && val.integerValue) return parseInt(val.integerValue, 10);
   return 0;
+}
+
+function fsBool(val) {
+  return (val && val.booleanValue === true) ? true : false;
 }
 
 function fsArr(val) {
@@ -651,6 +737,7 @@ function renderRecipeList() {
       }
       if (!match) continue;
     }
+    if (showFavoritesOnly && !r.favorite) continue;
     filtered.push(r);
   }
 
@@ -666,10 +753,12 @@ function renderRecipeList() {
   }
   emptyEl.style.display = 'none';
 
-  if (filtered.length === 0 && searchVal) {
+  if (filtered.length === 0 && (searchVal || showFavoritesOnly)) {
     var noMatch = document.createElement('div');
     noMatch.className = 'recipe-card';
-    noMatch.innerHTML = '<div class="recipe-card-title">No matches</div><div class="recipe-card-meta">Try a different search term</div>';
+    var noMatchTitle = showFavoritesOnly ? 'No favorites yet' : 'No matches';
+    var noMatchSub = showFavoritesOnly ? 'Tap Favorite on any recipe to save it here' : 'Try a different search term';
+    noMatch.innerHTML = '<div class="recipe-card-title">' + noMatchTitle + '</div><div class="recipe-card-meta">' + noMatchSub + '</div>';
     listEl.appendChild(noMatch);
     return;
   }
@@ -684,7 +773,7 @@ function renderRecipeList() {
     if (r.cookTime) metaParts.push(r.cookTime);
     if (r.servings) metaParts.push(r.servings + ' servings');
 
-    var html = '<div class="recipe-card-title">' + escapeHtml(r.title) + '</div>';
+    var html = '<div class="recipe-card-title">' + (r.favorite ? '&#9733; ' : '') + escapeHtml(r.title) + '</div>';
     if (metaParts.length) {
       html += '<div class="recipe-card-meta">' + escapeHtml(metaParts.join(' · ')) + '</div>';
     }
@@ -713,6 +802,10 @@ function showRecipeDetail(recipeId) {
   if (!recipe) return;
 
   currentRecipeId = recipeId;
+
+  updateFavoriteButton(recipe.favorite);
+  var tsBtn = document.getElementById('btn-textsize');
+  if (tsBtn) tsBtn.textContent = detailLargeText ? 'A-' : 'A+';
 
   document.getElementById('detail-title').textContent = recipe.title;
 
