@@ -29,19 +29,22 @@ html, body {
 .header-inner {
   max-width: 600px;
   margin: 0 auto;
-  overflow: hidden;
+  position: relative;
+  text-align: center;
 }
 
 .header-title {
   font-size: 20px;
   font-weight: 700;
   color: #5db07a;
-  float: left;
   line-height: 36px;
+  display: inline-block;
 }
 
 #auth-header-area {
-  float: right;
+  position: fixed;
+  right: 16px;
+  top: 12px;
   line-height: 36px;
 }
 
@@ -244,6 +247,7 @@ h3 { font-size: 18px; margin: 20px 0 10px 0; color: #5db07a; }
   padding: 16px;
   margin-bottom: 12px;
   cursor: pointer;
+  overflow: hidden;
 }
 
 .recipe-card:active {
@@ -501,6 +505,46 @@ h3 { font-size: 18px; margin: 20px 0 10px 0; color: #5db07a; }
 }
 
 /* ============================================================
+   RESPONSIVE — tablet landscape + desktop (768px+)
+   ============================================================ */
+@media (min-width: 768px) {
+  .container {
+    max-width: 960px;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  /* 2-column recipe cards */
+  #recipe-list {
+    -webkit-column-count: 2;
+    column-count: 2;
+    -webkit-column-gap: 16px;
+    column-gap: 16px;
+  }
+
+  .recipe-card {
+    display: inline-block;
+    width: 100%;
+    -webkit-column-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Side-by-side ingredients + instructions */
+  .detail-two-col {
+    overflow: hidden;
+  }
+
+  .detail-col {
+    float: left;
+    width: 48%;
+  }
+
+  .detail-col + .detail-col {
+    margin-left: 4%;
+  }
+}
+
+/* ============================================================
    LIGHT MODE
    ============================================================ */
 body.light-mode {
@@ -614,4 +658,55 @@ body.light-mode .btn-filter {
 body.light-mode .btn-filter-active {
   background: #4a9668;
   color: #ffffff;
+}
+
+/* Sort select */
+.sort-select {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 8px;
+  padding: 7px 12px;
+  background: #1a1a24;
+  color: #aaa;
+  border: 1px solid #2a2a3a;
+  border-radius: 20px;
+  font-size: 14px;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+
+body.light-mode .sort-select {
+  background: #eeede8;
+  color: #555;
+  border-color: #ccccc0;
+}
+
+/* Image upload in edit form */
+#image-upload-section .btn-secondary {
+  margin-top: 0;
+}
+
+/* Detail image */
+#detail-image-section {
+  margin-bottom: 16px;
+}
+
+/* Camera FAB — center SVG inside circle */
+.btn-fab-camera {
+  line-height: 56px;
+}
+
+.btn-fab-camera svg {
+  vertical-align: middle;
+}
+
+/* Recipe list thumbnails */
+.recipe-card-thumb {
+  float: right;
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-left: 12px;
+  margin-bottom: 4px;
 }

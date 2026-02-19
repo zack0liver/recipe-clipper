@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Bitebase</title>
+  <title>NomBook</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -16,7 +16,7 @@
   <!-- Header -->
   <div class="header">
     <div class="header-inner">
-      <span class="header-title">Bitebase</span>
+      <span class="header-title">NomBook</span>
       <span id="auth-header-area">
         <button id="btn-theme" class="btn-link" onclick="toggleTheme()" style="margin-right:14px;">Light</button>
         <button id="btn-header-sign-in" class="btn-link" onclick="showView('auth')">Sign In</button>
@@ -59,6 +59,11 @@
       </div>
       <div id="filter-bar" style="display:none;">
         <button id="btn-favorites-filter" class="btn-filter" onclick="toggleFavoritesFilter()">Favorites</button>
+        <select id="sort-select" class="sort-select" onchange="changeSortOrder(this.value)">
+          <option value="date">Newest</option>
+          <option value="alpha">A–Z</option>
+          <option value="cook">Cook Time</option>
+        </select>
       </div>
       <div id="recipe-list">
         <div class="empty-state" id="empty-state">
@@ -69,6 +74,16 @@
       <button id="btn-add" class="btn-fab" onclick="startAddRecipe()">+</button>
     </div>
   </div>
+
+  <!-- Camera FAB (detail view) -->
+  <button id="btn-add-photo" class="btn-fab btn-fab-camera" style="display:none;" onclick="triggerDetailPhotoAdd()">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+      <circle cx="12" cy="13" r="4"></circle>
+    </svg>
+  </button>
+  <input type="file" id="detail-photo-input" accept="image/*" capture="environment"
+         style="display:none;" onchange="handleDetailPhotoAdd(this)">
 
   <!-- ============ ADD/EDIT VIEW ============ -->
   <div id="view-edit" class="view" style="display:none;">
@@ -83,6 +98,17 @@
       </div>
 
       <div class="divider"></div>
+
+      <div class="form-group" id="image-upload-section">
+        <label>Photo (optional)</label>
+        <img id="edit-image-preview" style="display:none; max-width:100%; border-radius:8px; margin-bottom:8px;">
+        <input type="file" id="edit-image-input" accept="image/*" capture="environment"
+               style="display:none;" onchange="handleImageSelected(this)">
+        <button type="button" class="btn-secondary" style="width:auto;"
+                onclick="document.getElementById('edit-image-input').click()">Take / Choose Photo</button>
+        <button type="button" class="btn-link" id="btn-remove-photo"
+                style="display:none; margin-left:12px;" onclick="removeEditImage()">Remove photo</button>
+      </div>
 
       <div class="form-group">
         <label for="edit-title">Title *</label>
@@ -140,11 +166,20 @@
       <div id="detail-meta" class="detail-meta"></div>
       <div id="detail-tags" class="detail-tags"></div>
 
-      <h3>Ingredients</h3>
-      <ul id="detail-ingredients"></ul>
+      <div id="detail-image-section" style="display:none; margin-bottom:16px;">
+        <img id="detail-image" style="max-width:400px; width:100%; height:auto; border-radius:10px; display:block; margin:0 auto;">
+      </div>
 
-      <h3>Instructions</h3>
-      <ol id="detail-instructions"></ol>
+      <div class="detail-two-col">
+        <div class="detail-col">
+          <h3>Ingredients</h3>
+          <ul id="detail-ingredients"></ul>
+        </div>
+        <div class="detail-col">
+          <h3>Instructions</h3>
+          <ol id="detail-instructions"></ol>
+        </div>
+      </div>
 
       <div id="detail-notes-section" style="display:none;">
         <h3>Notes</h3>
