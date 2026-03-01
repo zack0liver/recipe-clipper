@@ -573,6 +573,117 @@ function fsArr(val) {
 // RECIPE EXTRACTION
 // ============================================================
 
+function isSocialMediaUrl(url) {
+  return /instagram\.com|facebook\.com|fb\.watch|youtube\.com\/shorts|youtu\.be/.test(url);
+}
+
+function decodeHTMLEntities(text) {
+  return text
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&#(\d+);/g, function(match, dec) { return String.fromCharCode(parseInt(dec, 10)); });
+}
+
+function parseRecipeFromText(text, title) {
+  text = decodeHTMLEntities(text);
+  var lines = text.split(/[\n\r]+/).map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
+
+  var ingredients = [];
+  var instructions = [];
+  var inIngredients = false;
+  var inInstructions = false;
+
+  var measurePattern = /^\d[\d\s\/]*\s*(cup|tbsp|tsp|tablespoon|teaspoon|oz|g|kg|lb|lbs|ml|l|bunch|clove|cloves|piece|pieces|can|package|pkg|pinch|dash|handful|slice|slices|pound|pounds|ounce|ounces|stick|sticks|head|heads)/i;
+  var sectionIngredients = /^(ingredients?|what you('ll)? need|you('ll)? need)\s*:?\s*$/i;
+  var sectionInstructions = /^(instructions?|directions?|steps?|method|how to( make)?|preparation|prep|to make|make it)\s*:?\s*$/i;
+  var numberedStep = /^\d+[\.\)]\s+/;
+  var bulletItem = /^[•\-\*]\s+/;
+
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+
+    if (sectionIngredients.test(line)) {
+      inIngredients = true;
+      inInstructions = false;
+      continue;
+    }
+    if (sectionInstructions.test(line)) {
+      inInstructions = true;
+      inIngredients = false;
+      continue;
+    }
+
+    if (inIngredients) {
+      // Long numbered line likely signals start of instructions
+      if (numberedStep.test(line) && line.length > 40) {
+        inInstructions = true;
+        inIngredients = false;
+        instructions.push(line.replace(numberedStep, ''));
+      } else {
+        ingredients.push(line.replace(bulletItem, ''));
+      }
+    } else if (inInstructions) {
+      instructions.push(line.replace(numberedStep, ''));
+    } else {
+      // No explicit sections — use heuristics
+      if (measurePattern.test(line) || (bulletItem.test(line) && line.length < 80)) {
+        ingredients.push(line.replace(bulletItem, ''));
+      } else if (numberedStep.test(line)) {
+        instructions.push(line.replace(numberedStep, ''));
+      }
+    }
+  }
+
+  // If heuristics found nothing, surface the full text as notes so nothing is lost
+  var notes = '';
+  if (ingredients.length === 0 && instructions.length === 0) {
+    notes = text;
+  }
+
+  return {
+    title: title || 'Recipe from video',
+    ingredients: ingredients,
+    instructions: instructions,
+    notes: notes,
+    servings: '',
+    prepTime: '',
+    cookTime: ''
+  };
+}
+
+function parseRecipeFromSocialHTML(html, sourceUrl) {
+  // Try both attribute orderings for og: meta tags
+  function getOgContent(property) {
+    var re1 = new RegExp('<meta[^>]+property=["\']' + property + '["\'][^>]+content=["\']([^"\']+)["\']', 'i');
+    var re2 = new RegExp('<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']' + property + '["\']', 'i');
+    var m = html.match(re1) || html.match(re2);
+    return m ? decodeHTMLEntities(m[1]) : '';
+  }
+
+  var title = getOgContent('og:title');
+  var description = getOgContent('og:description');
+
+  // Strip platform suffixes from title
+  title = title.replace(/\s*[\|–\-]\s*(Instagram|Facebook|YouTube|Reels?|TikTok).*$/i, '').trim();
+
+  if (!description) return null;
+
+  return parseRecipeFromText(description, title);
+}
+
+function extractSocialRecipe(url, callback) {
+  fetchWithFallback(url, function(html) {
+    if (!html) { callback(null); return; }
+    var recipe = parseRecipeFromSocialHTML(html, url);
+    callback(recipe);
+  });
+}
+
 function extractRecipe() {
   var urlInput = document.getElementById('extract-url');
   var url = urlInput.value.trim();
@@ -585,6 +696,25 @@ function extractRecipe() {
 
   statusEl.textContent = 'Extracting recipe...';
   document.getElementById('btn-extract').disabled = true;
+
+  if (isSocialMediaUrl(url)) {
+    statusEl.textContent = 'Fetching post caption...';
+    extractSocialRecipe(url, function(recipe) {
+      document.getElementById('btn-extract').disabled = false;
+      if (!recipe) {
+        statusEl.textContent = 'Could not fetch post. It may be private or login-protected. Please fill in the form manually.';
+        return;
+      }
+      populateEditForm(recipe);
+      document.getElementById('edit-source').value = url;
+      if (recipe.notes && !recipe.ingredients.length) {
+        statusEl.textContent = 'Post fetched but no structured recipe found — full caption is in the Notes field. Edit as needed.';
+      } else {
+        statusEl.textContent = 'Recipe extracted from post caption! Review and edit below.';
+      }
+    });
+    return;
+  }
 
   fetchWithFallback(url, function(html) {
     document.getElementById('btn-extract').disabled = false;
@@ -764,7 +894,7 @@ function populateEditForm(r) {
   document.getElementById('edit-ingredients').value = (r.ingredients || []).join('\n');
   document.getElementById('edit-instructions').value = (r.instructions || []).join('\n');
   document.getElementById('edit-tags').value = '';
-  document.getElementById('edit-notes').value = '';
+  document.getElementById('edit-notes').value = r.notes || '';
 }
 
 // ============================================================

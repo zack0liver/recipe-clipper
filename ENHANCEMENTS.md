@@ -38,4 +38,4 @@
 
 22. **Shopping list** — Automatically aggregate ingredients from all recipes in the current weekly meal plan into a single grocery list. Tap items to check them off while shopping. Ingredients from the same recipe are grouped, and duplicate ingredients across recipes are combined. Shareable as plain text for sending to a family member.
 
-23. **Clip recipes from social media videos** — Paste a Facebook or Instagram video URL and NomBook extracts the recipe from it. Likely approach: pull the video transcript/captions or pass the video URL to an LLM with vision capabilities to identify ingredients, steps, and cook time, then save as a standard recipe entry. Handles the common case where a recipe only exists as a short-form cooking video and was never written down.
+23. ~~**Clip recipes from social media videos**~~ — **Done.** Paste an Instagram, Facebook, or YouTube Shorts URL and NomBook fetches the post caption via existing CORS proxies, parses ingredients and steps using text heuristics, and pre-fills the edit form. Falls back to dumping the full caption in Notes if no structured recipe is detected. LLM-powered version remains a future enhancement.
