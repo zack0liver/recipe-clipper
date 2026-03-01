@@ -29,3 +29,5 @@
 18. ~~**Debounced search input**~~ — **Done.** 300ms debounce added before filtering triggers.
 
 17. ~~**Lazy thumbnail loading**~~ — **Done.** Uses IntersectionObserver (with 200px rootMargin) on modern browsers; falls back to loading all thumbnails on iOS 9 where the API is unavailable.
+
+19. **"Made it" log** — Log dates each time you cook a recipe. Show "last made" and "times made" on the detail view. Stored as an array of timestamps in Firestore on the recipe document.
