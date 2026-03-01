@@ -31,3 +31,5 @@
 17. ~~**Lazy thumbnail loading**~~ — **Done.** Uses IntersectionObserver (with 200px rootMargin) on modern browsers; falls back to loading all thumbnails on iOS 9 where the API is unavailable.
 
 19. **"Made it" log** — Log dates each time you cook a recipe. Show "last made" and "times made" on the detail view. Stored as an array of timestamps in Firestore on the recipe document.
+
+20. **Cook from pantry** — Enter the ingredients you have on hand, and NomBook searches the web for recipes that match those ingredients. Results are shown in a list and any recipe can be clipped and saved to your library in one tap. Possible approach: pass the ingredient list to a recipe search API (e.g. Spoonacular) or an LLM to suggest recipe URLs, then run them through the existing extraction pipeline.
