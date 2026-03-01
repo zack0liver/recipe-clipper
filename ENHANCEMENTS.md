@@ -10,7 +10,7 @@
 7. Cooking mode — step-by-step view with large text and wake lock
 8. Scale recipe servings (auto-adjust ingredient quantities)
 9. Sort recipes by date added, alphabetical, cook time
-10. Faster extraction — Current flow hits corsproxy.io, waits for failure, then retries allorigins.win sequentially (~8s on slow sites). Options to explore: run both proxies in parallel and take whichever responds first; or add a server-side extraction endpoint (e.g. Cloudflare Worker) to bypass proxy blocking entirely. Worth investigating what's causing the delay first.
+10. ~~Faster extraction~~ — **Done.** Both proxies now run in parallel; whichever responds first wins, eliminating the sequential ~8s wait.
 
 ## New (Session 1)
 
@@ -24,8 +24,8 @@
 
 15. **LLM-style search** — Natural language search across the recipe database (e.g. "something high protein under 30 minutes" or "chicken without dairy"). Could call an LLM API with the recipe list as context, or use local keyword scoring across title, tags, ingredients, and notes as a lighter-weight first pass.
 
-16. **Ingredient search** — Extend the search to match against ingredients in addition to title and tags. Currently only title and tags are searched. Needs performance testing at 200+ recipes since it means scanning more data per recipe on every keystroke.
+16. ~~**Ingredient search**~~ — **Done.** Search now matches against ingredients in addition to title and tags. Debounce keeps it responsive on large libraries.
 
-18. **Debounced search input** — Instead of running search on every keystroke, wait until the user pauses typing (e.g. 300ms delay) before filtering. Low priority for title/tag search but worth adding before enabling ingredient search.
+18. ~~**Debounced search input**~~ — **Done.** 300ms debounce added before filtering triggers.
 
-17. **Lazy thumbnail loading** — Currently all recipe thumbnails are fetched simultaneously when the list renders, which could mean 200+ parallel XHR requests on a large library. Fix: only load thumbnails for cards within the visible scroll area, fetching more as the user scrolls down.
+17. ~~**Lazy thumbnail loading**~~ — **Done.** Uses IntersectionObserver (with 200px rootMargin) on modern browsers; falls back to loading all thumbnails on iOS 9 where the API is unavailable.
