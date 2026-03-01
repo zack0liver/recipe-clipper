@@ -23,6 +23,7 @@ var detailLargeText = false;
 var currentSort = localStorage.getItem('rc_sort') || 'date';
 var editingImageData = '';        // base64 data URL, '' = no image
 var editingHasExistingImage = false; // true if recipe had an image when editing started
+var searchDebounceTimer = null;
 
 // ---- Init ----
 (function init() {
@@ -603,34 +604,49 @@ function extractRecipe() {
 }
 
 function fetchWithFallback(url, callback) {
-  // Try corsproxy.io first
+  // Run both proxies in parallel; whichever responds first wins
+  var done = false;
+  var pending = 2;
+
+  function succeed(html) {
+    if (done) return;
+    done = true;
+    callback(html);
+  }
+
+  function fail() {
+    pending--;
+    if (pending === 0 && !done) {
+      done = true;
+      callback(null);
+    }
+  }
+
   var xhr1 = new XMLHttpRequest();
   xhr1.open('GET', 'https://corsproxy.io/?' + encodeURIComponent(url), true);
   xhr1.onreadystatechange = function() {
     if (xhr1.readyState !== 4) return;
     if (xhr1.status >= 200 && xhr1.status < 400 && xhr1.responseText) {
-      callback(xhr1.responseText);
-      return;
+      succeed(xhr1.responseText);
+    } else {
+      fail();
     }
-    // Fall back to allorigins.win
-    var xhr2 = new XMLHttpRequest();
-    xhr2.open('GET', 'https://api.allorigins.win/get?url=' + encodeURIComponent(url), true);
-    xhr2.onreadystatechange = function() {
-      if (xhr2.readyState !== 4) return;
-      if (xhr2.status >= 200 && xhr2.status < 400) {
-        try {
-          var data = JSON.parse(xhr2.responseText);
-          callback(data.contents || null);
-        } catch (e) {
-          callback(null);
-        }
-      } else {
-        callback(null);
-      }
-    };
-    xhr2.send();
   };
   xhr1.send();
+
+  var xhr2 = new XMLHttpRequest();
+  xhr2.open('GET', 'https://api.allorigins.win/get?url=' + encodeURIComponent(url), true);
+  xhr2.onreadystatechange = function() {
+    if (xhr2.readyState !== 4) return;
+    if (xhr2.status >= 200 && xhr2.status < 400) {
+      try {
+        var data = JSON.parse(xhr2.responseText);
+        if (data.contents) { succeed(data.contents); return; }
+      } catch (e) {}
+    }
+    fail();
+  };
+  xhr2.send();
 }
 
 function parseRecipeFromHTML(html) {
@@ -771,6 +787,11 @@ function renderRecipeList() {
           if (r.tags[j].toLowerCase().indexOf(searchVal) !== -1) { match = true; break; }
         }
       }
+      if (!match && r.ingredients) {
+        for (var j = 0; j < r.ingredients.length; j++) {
+          if (r.ingredients[j].toLowerCase().indexOf(searchVal) !== -1) { match = true; break; }
+        }
+      }
       if (!match) continue;
     }
     if (showFavoritesOnly && !r.favorite) continue;
@@ -835,24 +856,46 @@ function renderRecipeList() {
     listEl.appendChild(card);
   }
 
-  // Lazy-load thumbnails
-  for (var i = 0; i < filtered.length; i++) {
-    (function(recipeId) {
-      loadRecipeImage(recipeId, function(imageData) {
-        if (!imageData) return;
-        var card = listEl.querySelector('[data-id="' + recipeId + '"]');
-        if (!card) return;
-        var thumb = document.createElement('img');
-        thumb.src = imageData;
-        thumb.className = 'recipe-card-thumb';
-        card.insertBefore(thumb, card.firstChild);
-      });
-    })(filtered[i].id);
+  // Lazy-load thumbnails: use IntersectionObserver where available (modern browsers),
+  // fall back to loading all at once (iOS 9)
+  function loadThumbForCard(card) {
+    var recipeId = card.getAttribute('data-id');
+    loadRecipeImage(recipeId, function(imageData) {
+      if (!imageData) return;
+      // Card may have been removed from DOM if list re-rendered
+      if (!card.parentNode) return;
+      var thumb = document.createElement('img');
+      thumb.src = imageData;
+      thumb.className = 'recipe-card-thumb';
+      card.insertBefore(thumb, card.firstChild);
+    });
+  }
+
+  var allCards = listEl.querySelectorAll('.recipe-card[data-id]');
+  if (window.IntersectionObserver) {
+    var thumbObserver = new IntersectionObserver(function(entries) {
+      for (var i = 0; i < entries.length; i++) {
+        if (entries[i].isIntersecting) {
+          thumbObserver.unobserve(entries[i].target);
+          loadThumbForCard(entries[i].target);
+        }
+      }
+    }, { rootMargin: '200px' });
+    for (var i = 0; i < allCards.length; i++) {
+      thumbObserver.observe(allCards[i]);
+    }
+  } else {
+    for (var i = 0; i < allCards.length; i++) {
+      loadThumbForCard(allCards[i]);
+    }
   }
 }
 
 function filterRecipes() {
-  renderRecipeList();
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+  searchDebounceTimer = setTimeout(function() {
+    renderRecipeList();
+  }, 300);
 }
 
 function showRecipeDetail(recipeId) {
