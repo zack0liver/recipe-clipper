@@ -660,25 +660,38 @@ body.light-mode .btn-filter-active {
   color: #ffffff;
 }
 
-/* Sort select */
-.sort-select {
-  display: inline-block;
-  vertical-align: middle;
-  margin-left: 8px;
-  padding: 7px 12px;
-  background: #1a1a24;
-  color: #aaa;
-  border: 1px solid #2a2a3a;
-  border-radius: 20px;
-  font-size: 14px;
-  -webkit-appearance: none;
-  cursor: pointer;
+/* Filter + sort pill rows */
+.filter-row, .sort-row {
+  overflow-x: auto;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
 }
 
-body.light-mode .sort-select {
-  background: #eeede8;
-  color: #555;
-  border-color: #ccccc0;
+.filter-row {
+  margin-bottom: 8px;
+}
+
+.sort-row {
+  border-top: 1px solid #2a2a3a;
+  padding-top: 10px;
+  margin-bottom: 10px;
+}
+
+body.light-mode .sort-row {
+  border-top-color: #ccccc0;
+}
+
+.filter-row .btn-filter,
+.sort-row .btn-filter {
+  margin-bottom: 0;
+  margin-right: 8px;
+}
+
+.btn-clear-filters {
+  font-size: 13px;
+  opacity: 0.6;
+  vertical-align: middle;
 }
 
 /* Image upload in edit form */

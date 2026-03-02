@@ -19,6 +19,8 @@ var editingRecipeId = null;
 var authMode = 'signin';  // 'signin' or 'signup'
 var currentView = 'list';
 var showFavoritesOnly = false;
+var showQuickMealOnly = false;
+var showMealPrepOnly = false;
 var detailLargeText = false;
 var currentSort = localStorage.getItem('rc_sort') || 'date';
 var editingImageData = '';        // base64 data URL, '' = no image
@@ -51,8 +53,7 @@ var searchDebounceTimer = null;
   }
 
   updateAuthUI();
-  var sortSel = document.getElementById('sort-select');
-  if (sortSel) sortSel.value = currentSort;
+  updateSortPills();
   showView('list');
   if (currentUser) {
     refreshTokenIfNeeded(function() {
@@ -172,9 +173,6 @@ function submitAuth() {
 function signOut() {
   currentUser = null;
   recipes = [];
-  showFavoritesOnly = false;
-  var filterBtn = document.getElementById('btn-favorites-filter');
-  if (filterBtn) { filterBtn.textContent = 'Favorites'; filterBtn.className = 'btn-filter'; }
   localStorage.removeItem('rc_user');
   updateAuthUI();
   showView('list');
@@ -224,31 +222,63 @@ function toggleFavorite() {
 function updateFavoriteButton(isFav) {
   var btn = document.getElementById('btn-favorite');
   if (!btn) return;
-  if (isFav) {
-    btn.textContent = 'Unfavorite';
-    btn.className = 'btn-fav-toggle is-fav';
-  } else {
-    btn.textContent = 'Favorite';
-    btn.className = 'btn-fav-toggle';
-  }
+  btn.className = isFav ? 'btn-fav-toggle is-fav' : 'btn-fav-toggle';
+}
+
+function updateClearFiltersBtn() {
+  var btn = document.getElementById('btn-clear-filters');
+  if (btn) btn.style.display = (showFavoritesOnly || showQuickMealOnly || showMealPrepOnly) ? 'inline' : 'none';
 }
 
 function toggleFavoritesFilter() {
   showFavoritesOnly = !showFavoritesOnly;
   var btn = document.getElementById('btn-favorites-filter');
-  if (showFavoritesOnly) {
-    btn.textContent = 'All Recipes';
-    btn.className = 'btn-filter btn-filter-active';
-  } else {
-    btn.textContent = 'Favorites';
-    btn.className = 'btn-filter';
-  }
+  if (btn) btn.className = showFavoritesOnly ? 'btn-filter btn-filter-active' : 'btn-filter';
+  updateClearFiltersBtn();
   renderRecipeList();
+}
+
+function toggleQuickMealFilter() {
+  showQuickMealOnly = !showQuickMealOnly;
+  var btn = document.getElementById('btn-quick-meal-filter');
+  if (btn) btn.className = showQuickMealOnly ? 'btn-filter btn-filter-active' : 'btn-filter';
+  updateClearFiltersBtn();
+  renderRecipeList();
+}
+
+function toggleMealPrepFilter() {
+  showMealPrepOnly = !showMealPrepOnly;
+  var btn = document.getElementById('btn-meal-prep-filter');
+  if (btn) btn.className = showMealPrepOnly ? 'btn-filter btn-filter-active' : 'btn-filter';
+  updateClearFiltersBtn();
+  renderRecipeList();
+}
+
+function clearFilters() {
+  showFavoritesOnly = false;
+  showQuickMealOnly = false;
+  showMealPrepOnly = false;
+  var ids = ['btn-favorites-filter', 'btn-quick-meal-filter', 'btn-meal-prep-filter'];
+  for (var i = 0; i < ids.length; i++) {
+    var btn = document.getElementById(ids[i]);
+    if (btn) btn.className = 'btn-filter';
+  }
+  updateClearFiltersBtn();
+  renderRecipeList();
+}
+
+function updateSortPills() {
+  var map = { 'date': 'sort-date', 'alpha': 'sort-alpha', 'cook': 'sort-cook' };
+  for (var key in map) {
+    var btn = document.getElementById(map[key]);
+    if (btn) btn.className = key === currentSort ? 'btn-filter btn-filter-active btn-sort' : 'btn-filter btn-sort';
+  }
 }
 
 function changeSortOrder(val) {
   currentSort = val;
   localStorage.setItem('rc_sort', val);
+  updateSortPills();
   renderRecipeList();
 }
 
@@ -260,6 +290,27 @@ function cookTimeToMinutes(str) {
   if (hm) h = parseInt(hm[1], 10);
   if (mm) m = parseInt(mm[1], 10);
   return h * 60 + m || 9999;
+}
+
+function totalTimeMinutes(r) {
+  var prepMin = r.prepTime ? (cookTimeToMinutes(r.prepTime) === 9999 ? 0 : cookTimeToMinutes(r.prepTime)) : null;
+  var cookMin = r.cookTime ? (cookTimeToMinutes(r.cookTime) === 9999 ? 0 : cookTimeToMinutes(r.cookTime)) : null;
+  if (prepMin === null && cookMin === null) return null; // unknown
+  return (prepMin || 0) + (cookMin || 0);
+}
+
+function isMealPrep(r) {
+  var needle = 'meal prep';
+  var needle2 = 'meal-prep';
+  var title = (r.title || '').toLowerCase();
+  if (title.indexOf(needle) !== -1 || title.indexOf(needle2) !== -1) return true;
+  if (r.tags) {
+    for (var i = 0; i < r.tags.length; i++) {
+      var t = r.tags[i].toLowerCase();
+      if (t.indexOf(needle) !== -1 || t.indexOf(needle2) !== -1) return true;
+    }
+  }
+  return false;
 }
 
 function toggleTheme() {
@@ -925,6 +976,11 @@ function renderRecipeList() {
       if (!match) continue;
     }
     if (showFavoritesOnly && !r.favorite) continue;
+    if (showQuickMealOnly) {
+      var total = totalTimeMinutes(r);
+      if (total === null || total > 20) continue;
+    }
+    if (showMealPrepOnly && !isMealPrep(r)) continue;
     filtered.push(r);
   }
 
@@ -950,11 +1006,12 @@ function renderRecipeList() {
   }
   emptyEl.style.display = 'none';
 
-  if (filtered.length === 0 && (searchVal || showFavoritesOnly)) {
+  var anyFilter = searchVal || showFavoritesOnly || showQuickMealOnly || showMealPrepOnly;
+  if (filtered.length === 0 && anyFilter) {
     var noMatch = document.createElement('div');
     noMatch.className = 'recipe-card';
-    var noMatchTitle = showFavoritesOnly ? 'No favorites yet' : 'No matches';
-    var noMatchSub = showFavoritesOnly ? 'Tap Favorite on any recipe to save it here' : 'Try a different search term';
+    var noMatchTitle = showFavoritesOnly && !searchVal && !showQuickMealOnly && !showMealPrepOnly ? 'No favorites yet' : 'No matches';
+    var noMatchSub = showFavoritesOnly && !searchVal && !showQuickMealOnly && !showMealPrepOnly ? 'Tap Favorite on any recipe to save it here' : 'Try adjusting your filters';
     noMatch.innerHTML = '<div class="recipe-card-title">' + noMatchTitle + '</div><div class="recipe-card-meta">' + noMatchSub + '</div>';
     listEl.appendChild(noMatch);
     return;

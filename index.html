@@ -58,12 +58,17 @@
         <input type="text" id="search-input" placeholder="Search recipes..." oninput="filterRecipes()">
       </div>
       <div id="filter-bar" style="display:none;">
-        <button id="btn-favorites-filter" class="btn-filter" onclick="toggleFavoritesFilter()">Favorites</button>
-        <select id="sort-select" class="sort-select" onchange="changeSortOrder(this.value)">
-          <option value="date">Newest</option>
-          <option value="alpha">A–Z</option>
-          <option value="cook">Cook Time</option>
-        </select>
+        <div class="filter-row">
+          <button id="btn-favorites-filter" class="btn-filter" onclick="toggleFavoritesFilter()">Favorites</button>
+          <button id="btn-quick-meal-filter" class="btn-filter" onclick="toggleQuickMealFilter()">Quick Meal</button>
+          <button id="btn-meal-prep-filter" class="btn-filter" onclick="toggleMealPrepFilter()">Meal Prep</button>
+          <button id="btn-clear-filters" class="btn-link btn-clear-filters" style="display:none;" onclick="clearFilters()">Clear</button>
+        </div>
+        <div class="sort-row">
+          <button id="sort-date" class="btn-filter btn-sort" onclick="changeSortOrder('date')">Newest</button>
+          <button id="sort-alpha" class="btn-filter btn-sort" onclick="changeSortOrder('alpha')">A–Z</button>
+          <button id="sort-cook" class="btn-filter btn-sort" onclick="changeSortOrder('cook')">Cook Time</button>
+        </div>
       </div>
       <div id="recipe-list">
         <div class="empty-state" id="empty-state">
