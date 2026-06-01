@@ -249,6 +249,42 @@ Four brand icons in the same rounded stroke style as the mascot outlines:
 
 ---
 
+## PLATFORM COMPATIBILITY
+
+NomBook runs on an iPad 2 (iOS 9.3.5 Safari) as its primary kitchen device. Any brand assets used directly in the app must respect these constraints:
+
+```json
+{
+  "target-device": "iPad 2, iOS 9.3.5 Safari",
+  "css-constraints": {
+    "no-css-variables": "CSS custom properties (var(--color-*)) are not supported — use hardcoded hex values in app stylesheets",
+    "no-flexbox": "Flexbox is buggy on iOS 9 — use block/inline-block layout",
+    "no-css-grid": "Not supported",
+    "transitions": "Use -webkit- prefixed transitions only (e.g. -webkit-transition)",
+    "fonts": "Google Fonts may be slow to load on older hardware — system font fallbacks must look acceptable without Nunito or Inter loaded"
+  },
+  "js-constraints": {
+    "es5-only": "No const/let, no arrow functions, no template literals, no fetch(), no Promises",
+    "xhr-only": "Use XMLHttpRequest with callbacks",
+    "no-modules": "No ES modules or import/export"
+  },
+  "asset-notes": [
+    "SVG logos are fine — iOS 9 Safari renders inline SVG and SVG img tags",
+    "PNG fallbacks recommended for favicon and app icon (SVG favicons not supported in iOS 9 Safari)",
+    "Image assets should be compressed — older hardware is slow on large files",
+    "nombook_guy.png used in the app header and empty state should stay under 100KB"
+  ],
+  "font-fallback-stack": {
+    "display": "'Nunito', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif",
+    "body":    "'Inter', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif"
+  }
+}
+```
+
+**In practice:** The CSS tokens block in this spec (using `var()`) is for design tooling reference only. The actual `style.css` in the app uses hardcoded hex values from this palette.
+
+---
+
 ## USAGE RULES
 
 ```json
