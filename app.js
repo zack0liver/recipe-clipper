@@ -39,11 +39,13 @@ var loadingRecipes = false;
     }
   }
 
-  // Restore theme preference
-  if (localStorage.getItem('rc_theme') === 'light') {
-    document.body.className = 'light-mode';
-    document.documentElement.style.background = '#f4f4ee';
-    document.getElementById('btn-theme').textContent = 'Dark';
+  // Restore theme preference (light is default)
+  if (localStorage.getItem('rc_theme') === 'dark') {
+    document.body.className = document.body.className.replace('light-mode', '').replace(/^\s+|\s+$/g, '');
+    document.documentElement.style.background = '#0d1f18';
+    document.getElementById('btn-theme').textContent = 'Day';
+  } else {
+    document.documentElement.style.background = '#FFF6E7';
   }
 
   // Restore text size preference
@@ -319,14 +321,14 @@ function toggleTheme() {
   var btn = document.getElementById('btn-theme');
   if (body.className.indexOf('light-mode') !== -1) {
     body.className = body.className.replace('light-mode', '').replace(/^\s+|\s+$/g, '');
-    document.documentElement.style.background = '#0f0f13';
+    document.documentElement.style.background = '#0d1f18';
     localStorage.setItem('rc_theme', 'dark');
-    btn.textContent = 'Light';
+    btn.textContent = 'Day';
   } else {
     body.className = (body.className ? body.className + ' ' : '') + 'light-mode';
-    document.documentElement.style.background = '#f4f4ee';
+    document.documentElement.style.background = '#FFF6E7';
     localStorage.setItem('rc_theme', 'light');
-    btn.textContent = 'Dark';
+    btn.textContent = 'Night';
   }
 }
 

@@ -6,9 +6,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>NomBook</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Nunito:wght@800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="light-mode">
 
   <!-- Toast -->
   <div id="toast" class="toast"></div>
@@ -18,7 +19,7 @@
     <div class="header-inner">
       <img src="nombook_guy.png" class="header-logo" alt=""><span class="header-title">NomBook</span>
       <span id="auth-header-area">
-        <button id="btn-theme" class="btn-link" onclick="toggleTheme()" style="margin-right:14px;">Light</button>
+        <button id="btn-theme" class="btn-link" onclick="toggleTheme()" style="margin-right:14px;">Night</button>
         <button id="btn-header-sign-in" class="btn-link" onclick="showView('auth')">Sign In</button>
         <span id="signed-in-header" style="display:none;">
           <button class="btn-link" onclick="signOut()">Sign Out</button>
@@ -74,6 +75,7 @@
       <div id="recipe-list">
         <div class="empty-state" id="empty-state">
           <img src="nombook_guy.png" class="empty-state-logo" alt="NomBook">
+          <p class="empty-tagline">Recipes, notes, and kitchen discoveries</p>
           <p>No recipes yet.</p>
           <p id="empty-auth-msg">Sign in to start saving recipes.</p>
         </div>
