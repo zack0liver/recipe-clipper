@@ -16,7 +16,7 @@
   <!-- Header -->
   <div class="header">
     <div class="header-inner">
-      <span class="header-title">NomBook</span>
+      <img src="nombook_guy.png" class="header-logo" alt=""><span class="header-title">NomBook</span>
       <span id="auth-header-area">
         <button id="btn-theme" class="btn-link" onclick="toggleTheme()" style="margin-right:14px;">Light</button>
         <button id="btn-header-sign-in" class="btn-link" onclick="showView('auth')">Sign In</button>
@@ -70,8 +70,10 @@
           <button id="sort-cook" class="btn-filter btn-sort" onclick="changeSortOrder('cook')">Cook Time</button>
         </div>
       </div>
+      <div id="loading-state" class="loading-text" style="display:none;">Loading recipes...</div>
       <div id="recipe-list">
         <div class="empty-state" id="empty-state">
+          <img src="nombook_guy.png" class="empty-state-logo" alt="NomBook">
           <p>No recipes yet.</p>
           <p id="empty-auth-msg">Sign in to start saving recipes.</p>
         </div>
@@ -169,6 +171,7 @@
       </div>
       <h1 id="detail-title"></h1>
       <div id="detail-meta" class="detail-meta"></div>
+      <div id="detail-made-info" class="detail-made-info" style="display:none;"></div>
       <div id="detail-tags" class="detail-tags"></div>
 
       <div id="detail-image-section" style="display:none; margin-bottom:16px;">
@@ -196,6 +199,7 @@
       </div>
 
       <div class="detail-actions">
+        <button class="btn-made-it" onclick="logMadeIt()">Made it!</button>
         <button class="btn-accent" onclick="editCurrentRecipe()">Edit</button>
         <button class="btn-danger" onclick="deleteCurrentRecipe()">Delete</button>
       </div>

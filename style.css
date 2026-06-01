@@ -41,6 +41,13 @@ html, body {
   display: inline-block;
 }
 
+.header-logo {
+  height: 30px;
+  width: auto;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
 #auth-header-area {
   position: fixed;
   right: 16px;
@@ -131,6 +138,24 @@ h3 { font-size: 18px; margin: 20px 0 10px 0; color: #5db07a; }
 
 .btn-danger:active {
   background: #aa2222;
+}
+
+.btn-made-it {
+  display: inline-block;
+  padding: 12px 24px;
+  background: transparent;
+  color: #e8a030;
+  border: 1px solid #e8a030;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-appearance: none;
+}
+
+.btn-made-it:active {
+  background: #e8a030;
+  color: #ffffff;
 }
 
 .btn-link {
@@ -292,6 +317,24 @@ h3 { font-size: 18px; margin: 20px 0 10px 0; color: #5db07a; }
   font-size: 13px;
   margin-right: 6px;
   margin-bottom: 6px;
+  cursor: pointer;
+}
+
+.tag-chip {
+  display: inline-block;
+  background: #2a2a3a;
+  color: #5db07a;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  margin-right: 4px;
+  cursor: pointer;
+}
+
+.detail-made-info {
+  font-size: 14px;
+  color: #9999aa;
+  margin-bottom: 12px;
 }
 
 #detail-ingredients li,
@@ -382,6 +425,12 @@ h3 { font-size: 18px; margin: 20px 0 10px 0; color: #5db07a; }
 
 .empty-state p {
   margin-bottom: 10px;
+}
+
+.empty-state-logo {
+  width: 110px;
+  height: auto;
+  margin-bottom: 16px;
 }
 
 /* Toast */
@@ -630,6 +679,14 @@ body.light-mode .divider {
 
 body.light-mode .empty-state {
   color: #666677;
+}
+
+body.light-mode .detail-made-info {
+  color: #666677;
+}
+
+body.light-mode .tag-chip {
+  background: #e4f2ea;
 }
 
 body.light-mode .loading-text {

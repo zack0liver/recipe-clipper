@@ -26,6 +26,7 @@ var currentSort = localStorage.getItem('rc_sort') || 'date';
 var editingImageData = '';        // base64 data URL, '' = no image
 var editingHasExistingImage = false; // true if recipe had an image when editing started
 var searchDebounceTimer = null;
+var loadingRecipes = false;
 
 // ---- Init ----
 (function init() {
@@ -388,6 +389,8 @@ function recipesPath() {
 
 function loadRecipes() {
   if (!currentUser) return;
+  loadingRecipes = true;
+  renderRecipeList();
   refreshTokenIfNeeded(function() {
     var url = recipesPath() + '?pageSize=500';
     xhrGet(url, currentUser.idToken, function(err, data) {
@@ -400,6 +403,7 @@ function loadRecipes() {
         }
       }
       recipes.sort(function(a, b) { return b.createdAt - a.createdAt; });
+      loadingRecipes = false;
       renderRecipeList();
     });
   });
@@ -570,6 +574,13 @@ function recipeToFirestoreFields(r) {
   }
   fields.tags = { arrayValue: { values: tagValues.length ? tagValues : [] } };
 
+  var madeLogValues = [];
+  var madeLog = r.madeLog || [];
+  for (var i = 0; i < madeLog.length; i++) {
+    madeLogValues.push({ integerValue: String(madeLog[i]) });
+  }
+  fields.madeLog = { arrayValue: { values: madeLogValues } };
+
   return fields;
 }
 
@@ -590,7 +601,8 @@ function firestoreDocToRecipe(doc) {
     ingredients: fsArr(f.ingredients),
     instructions: fsArr(f.instructions),
     tags: fsArr(f.tags),
-    favorite: fsBool(f.favorite)
+    favorite: fsBool(f.favorite),
+    madeLog: fsMadeLog(f.madeLog)
   };
 }
 
@@ -614,6 +626,19 @@ function fsArr(val) {
     for (var i = 0; i < values.length; i++) {
       if (values[i].stringValue !== undefined) {
         result.push(values[i].stringValue);
+      }
+    }
+  }
+  return result;
+}
+
+function fsMadeLog(val) {
+  var result = [];
+  if (val && val.arrayValue && val.arrayValue.values) {
+    var values = val.arrayValue.values;
+    for (var i = 0; i < values.length; i++) {
+      if (values[i].integerValue !== undefined) {
+        result.push(parseInt(values[i].integerValue, 10));
       }
     }
   }
@@ -955,7 +980,17 @@ function populateEditForm(r) {
 function renderRecipeList() {
   var listEl = document.getElementById('recipe-list');
   var emptyEl = document.getElementById('empty-state');
+  var loadingEl = document.getElementById('loading-state');
   var searchVal = document.getElementById('search-input').value.toLowerCase();
+
+  if (loadingRecipes) {
+    if (loadingEl) loadingEl.style.display = 'block';
+    if (emptyEl) emptyEl.style.display = 'none';
+    var lc = listEl.querySelectorAll('.recipe-card');
+    for (var i = 0; i < lc.length; i++) listEl.removeChild(lc[i]);
+    return;
+  }
+  if (loadingEl) loadingEl.style.display = 'none';
 
   var filtered = [];
   for (var i = 0; i < recipes.length; i++) {
@@ -972,6 +1007,9 @@ function renderRecipeList() {
         for (var j = 0; j < r.ingredients.length; j++) {
           if (r.ingredients[j].toLowerCase().indexOf(searchVal) !== -1) { match = true; break; }
         }
+      }
+      if (!match && r.notes) {
+        if (r.notes.toLowerCase().indexOf(searchVal) !== -1) match = true;
       }
       if (!match) continue;
     }
@@ -1032,7 +1070,11 @@ function renderRecipeList() {
       html += '<div class="recipe-card-meta">' + escapeHtml(metaParts.join(' · ')) + '</div>';
     }
     if (r.tags && r.tags.length) {
-      html += '<div class="recipe-card-tags">' + escapeHtml(r.tags.join(', ')) + '</div>';
+      var tagHtml = '';
+      for (var k = 0; k < r.tags.length; k++) {
+        tagHtml += '<span class="tag-chip" onclick="tagChipClick(event, this);">' + escapeHtml(r.tags[k]) + '</span>';
+      }
+      html += '<div class="recipe-card-tags">' + tagHtml + '</div>';
     }
     card.innerHTML = html;
 
@@ -1112,6 +1154,9 @@ function showRecipeDetail(recipeId) {
   }
   document.getElementById('detail-meta').textContent = meta.join(' · ');
 
+  // Made log
+  updateMadeInfo(recipe.madeLog);
+
   // Tags
   var tagsEl = document.getElementById('detail-tags');
   tagsEl.innerHTML = '';
@@ -1119,6 +1164,9 @@ function showRecipeDetail(recipeId) {
     for (var i = 0; i < recipe.tags.length; i++) {
       var span = document.createElement('span');
       span.textContent = recipe.tags[i];
+      (function(t) {
+        span.onclick = function() { filterByTag(t); };
+      })(recipe.tags[i]);
       tagsEl.appendChild(span);
     }
   }
@@ -1450,6 +1498,80 @@ function loadRecipeImage(recipeId, callback) {
       callback(data.fields.imageData.stringValue || null);
     });
   });
+}
+
+// ============================================================
+// TAG FILTER
+// ============================================================
+
+function tagChipClick(e, el) {
+  if (e && e.stopPropagation) e.stopPropagation();
+  var tag = el.textContent || el.innerText || '';
+  tag = tag.replace(/^\s+|\s+$/g, '');
+  if (tag) filterByTag(tag);
+}
+
+function filterByTag(tag) {
+  var input = document.getElementById('search-input');
+  if (input) input.value = tag;
+  showView('list');
+  filterRecipes();
+}
+
+// ============================================================
+// MADE IT LOG
+// ============================================================
+
+function logMadeIt() {
+  if (!currentRecipeId || !currentUser) return;
+  var recipe = null;
+  for (var i = 0; i < recipes.length; i++) {
+    if (recipes[i].id === currentRecipeId) { recipe = recipes[i]; break; }
+  }
+  if (!recipe) return;
+
+  if (!recipe.madeLog) recipe.madeLog = [];
+  recipe.madeLog.push(Date.now());
+  updateMadeInfo(recipe.madeLog);
+
+  refreshTokenIfNeeded(function() {
+    var url = recipesPath() + '/' + currentRecipeId + '?updateMask.fieldPaths=madeLog';
+    var values = [];
+    for (var i = 0; i < recipe.madeLog.length; i++) {
+      values.push({ integerValue: String(recipe.madeLog[i]) });
+    }
+    var patch = { fields: { madeLog: { arrayValue: { values: values } } } };
+    xhrPatch(url, JSON.stringify(patch), currentUser.idToken, function(err) {
+      if (err) {
+        recipe.madeLog.pop();
+        updateMadeInfo(recipe.madeLog);
+        showToast('Could not save');
+      } else {
+        showToast('Logged!');
+      }
+    });
+  });
+}
+
+function updateMadeInfo(madeLog) {
+  var el = document.getElementById('detail-made-info');
+  if (!el) return;
+  if (!madeLog || madeLog.length === 0) {
+    el.style.display = 'none';
+    el.textContent = '';
+    return;
+  }
+  var count = madeLog.length;
+  var latest = 0;
+  for (var i = 0; i < madeLog.length; i++) {
+    if (madeLog[i] > latest) latest = madeLog[i];
+  }
+  var d = new Date(latest);
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var dateStr = months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+  var countStr = count === 1 ? 'Made once' : 'Made ' + count + ' times';
+  el.textContent = countStr + ' · Last: ' + dateStr;
+  el.style.display = 'block';
 }
 
 // ============================================================
