@@ -1079,7 +1079,7 @@ function renderRecipeList() {
     card.style.cssText = 'position:relative;background:#fff;border:1px solid #E7E3D6;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(31,77,58,.06);display:-webkit-box;display:-webkit-flex;display:flex;min-height:168px;cursor:pointer;';
 
     // Photo panel (placeholder until lazy load fills it)
-    var iconSrc = 'design_handoff_nombook/brand/icon-' + (r.placeholderIcon || 'plate') + '.svg';
+    var iconSrc = 'icon-' + (r.placeholderIcon || 'plate') + '.svg';
     var phHtml = '<div class="card-ph" style="width:42%;min-width:42%;background:#FFF6E7;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;">' +
       '<img src="' + iconSrc + '" style="width:60%;max-width:120px;opacity:.85;" alt=""></div>';
 
