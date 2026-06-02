@@ -27,10 +27,14 @@ html, body {
 }
 
 .header-inner {
-  max-width: 600px;
+  max-width: 1040px;
   margin: 0 auto;
-  position: relative;
-  text-align: center;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+  align-items: center;
 }
 
 .header-title {
@@ -863,13 +867,7 @@ body.light-mode .sort-row {
   vertical-align: middle;
 }
 
-/* Recipe list thumbnails */
-.recipe-card-thumb {
-  float: right;
-  width: 64px;
-  height: 64px;
-  object-fit: cover;
-  border-radius: 8px;
-  margin-left: 12px;
-  margin-bottom: 4px;
-}
+/* Card grid — 1 col default, 2 col at 720px */
+.card-grid { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; margin: 0 -8px; }
+.card-col { width: 100%; padding: 0 8px; margin-bottom: 16px; }
+@media (min-width: 720px) { .card-col { width: 50%; } }

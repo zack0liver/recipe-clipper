@@ -11,7 +11,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
   <link rel="icon" href="favicon-32.png">
   <meta name="apple-mobile-web-app-title" content="NomBook">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Nunito:wght@800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body class="light-mode">
@@ -20,14 +20,17 @@
   <div id="toast" class="toast"></div>
 
   <!-- Header -->
-  <div class="header">
+  <div class="header" style="background:#1F4D3A;border-bottom-color:#356b53;">
     <div class="header-inner">
-      <img src="nombook_guy.png" class="header-logo" alt=""><span class="header-title">NomBook</span>
-      <span id="auth-header-area">
-        <button id="btn-theme" class="btn-link" onclick="toggleTheme()" style="margin-right:14px;">Night</button>
-        <button id="btn-header-sign-in" class="btn-link" onclick="showView('auth')">Sign In</button>
+      <img src="nombook_guy.png" class="header-logo" alt="" style="height:32px;width:32px;margin-right:9px;">
+      <span class="header-title" style="color:#FFF6E7;font-weight:900;letter-spacing:.5px;">NomBook</span>
+      <input type="text" id="search-input" placeholder="Search recipes…" oninput="filterRecipes()"
+        style="margin-left:auto;-webkit-flex:1;flex:1;max-width:240px;min-width:0;background:#2c5e49;color:#cde0d4;border:1px solid #356b53;border-radius:10px;padding:8px 12px;font-size:14px;-webkit-appearance:none;">
+      <span id="auth-header-area" style="position:static;margin-left:12px;white-space:nowrap;">
+        <button id="btn-theme" class="btn-link" onclick="toggleTheme()" style="color:#cde0d4;font-size:14px;margin-right:10px;">Night</button>
+        <button id="btn-header-sign-in" class="btn-link" onclick="showView('auth')" style="color:#cde0d4;font-size:14px;">Sign In</button>
         <span id="signed-in-header" style="display:none;">
-          <button class="btn-link" onclick="signOut()">Sign Out</button>
+          <button class="btn-link" onclick="signOut()" style="color:#cde0d4;font-size:14px;">Sign Out</button>
         </span>
       </span>
     </div>
@@ -59,10 +62,7 @@
 
   <!-- ============ LIST VIEW ============ -->
   <div id="view-list" class="view">
-    <div class="container">
-      <div class="search-bar">
-        <input type="text" id="search-input" placeholder="Search recipes..." oninput="filterRecipes()">
-      </div>
+    <div class="container" style="max-width:1040px;">
       <div id="filter-bar" style="display:none;">
         <div class="filter-row">
           <button id="btn-favorites-filter" class="btn-filter" onclick="toggleFavoritesFilter()">Favorites</button>

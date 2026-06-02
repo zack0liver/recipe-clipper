@@ -988,7 +988,7 @@ function renderRecipeList() {
   if (loadingRecipes) {
     if (loadingEl) loadingEl.style.display = 'block';
     if (emptyEl) emptyEl.style.display = 'none';
-    var lc = listEl.querySelectorAll('.recipe-card');
+    var lc = listEl.querySelectorAll('.card-grid, .no-match-card');
     for (var i = 0; i < lc.length; i++) listEl.removeChild(lc[i]);
     return;
   }
@@ -1035,7 +1035,7 @@ function renderRecipeList() {
   });
 
   // Clear existing cards (keep empty state)
-  var cards = listEl.querySelectorAll('.recipe-card');
+  var cards = listEl.querySelectorAll('.card-grid, .no-match-card');
   for (var i = 0; i < cards.length; i++) {
     listEl.removeChild(cards[i]);
   }
@@ -1049,7 +1049,7 @@ function renderRecipeList() {
   var anyFilter = searchVal || showFavoritesOnly || showQuickMealOnly || showMealPrepOnly;
   if (filtered.length === 0 && anyFilter) {
     var noMatch = document.createElement('div');
-    noMatch.className = 'recipe-card';
+    noMatch.className = 'no-match-card';
     var noMatchTitle = showFavoritesOnly && !searchVal && !showQuickMealOnly && !showMealPrepOnly ? 'No favorites yet' : 'No matches';
     var noMatchSub = showFavoritesOnly && !searchVal && !showQuickMealOnly && !showMealPrepOnly ? 'Tap Favorite on any recipe to save it here' : 'Try adjusting your filters';
     noMatch.innerHTML = '<div class="recipe-card-title">' + noMatchTitle + '</div><div class="recipe-card-meta">' + noMatchSub + '</div>';
@@ -1057,52 +1057,96 @@ function renderRecipeList() {
     return;
   }
 
+  var clockSvg = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1F4D3A" stroke-width="2" style="margin-right:5px;vertical-align:middle;"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2" stroke-linecap="round"/></svg>';
+  var personSvg = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1F4D3A" stroke-width="2" style="margin-right:5px;vertical-align:middle;"><circle cx="12" cy="8" r="3.4"/><path d="M5.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6" stroke-linecap="round"/></svg>';
+  var starSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="#F2C14E" stroke="#caa12f" stroke-width="1"><polygon points="12,2 15,9 22,9.3 16.5,14 18.5,21 12,17 5.5,21 7.5,14 2,9.3 9,9"/></svg>';
+  var plateSrc = 'design_handoff_nombook/recipe-cards/recipe-plate.svg';
+
+  var grid = document.createElement('div');
+  grid.className = 'card-grid';
+
   for (var i = 0; i < filtered.length; i++) {
     var r = filtered[i];
+
+    var col = document.createElement('div');
+    col.className = 'card-col';
+
     var card = document.createElement('div');
-    card.className = 'recipe-card';
     card.setAttribute('data-id', r.id);
+    card.style.cssText = 'position:relative;background:#fff;border:1px solid #E7E3D6;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(31,77,58,.06);display:-webkit-box;display:-webkit-flex;display:flex;min-height:168px;cursor:pointer;';
 
-    var metaParts = [];
-    if (r.cookTime) metaParts.push(r.cookTime);
-    if (r.servings) metaParts.push(r.servings + ' servings');
+    // Photo panel (placeholder until lazy load fills it)
+    var phHtml = '<div class="card-ph" style="width:42%;min-width:42%;background:#FFF6E7;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;">' +
+      '<img src="' + plateSrc + '" style="width:60%;max-width:120px;opacity:.85;" alt=""></div>';
 
-    var html = '<div class="recipe-card-title">' + (r.favorite ? '&#9733; ' : '') + escapeHtml(r.title) + '</div>';
-    if (metaParts.length) {
-      html += '<div class="recipe-card-meta">' + escapeHtml(metaParts.join(' · ')) + '</div>';
-    }
+    // Favorite badge
+    var favHtml = r.favorite
+      ? '<div style="position:absolute;top:10px;right:10px;width:28px;height:28px;background:rgba(255,246,231,.92);border-radius:50%;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;box-shadow:0 1px 4px rgba(31,77,58,.18);z-index:2;">' + starSvg + '</div>'
+      : '';
+
+    // Body
+    var bodyHtml = '<div style="-webkit-box-flex:1;-webkit-flex:1;flex:1;padding:14px 14px 12px;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;">';
+
+    // Tags (first tag gold, rest green)
     if (r.tags && r.tags.length) {
-      var tagHtml = '';
+      bodyHtml += '<div style="display:-webkit-flex;display:flex;-webkit-flex-wrap:wrap;flex-wrap:wrap;overflow:hidden;max-height:22px;">';
       for (var k = 0; k < r.tags.length; k++) {
-        tagHtml += '<span class="tag-chip" onclick="tagChipClick(event, this);">' + escapeHtml(r.tags[k]) + '</span>';
+        var pillStyle = k === 0
+          ? 'color:#8a6410;background:#FBEFCF;border:1px solid #f0dca2;'
+          : 'color:#36694f;background:#EBF1E8;border:1px solid #dbe6d6;';
+        bodyHtml += '<span style="font-family:Nunito,sans-serif;font-weight:700;font-size:10px;letter-spacing:.6px;text-transform:uppercase;' + pillStyle + 'padding:2px 8px;border-radius:999px;margin:0 5px 0 0;white-space:nowrap;cursor:pointer;" onclick="tagChipClick(event,this);">' + escapeHtml(r.tags[k]) + '</span>';
       }
-      html += '<div class="recipe-card-tags">' + tagHtml + '</div>';
+      bodyHtml += '</div>';
     }
-    card.innerHTML = html;
+
+    // Title
+    bodyHtml += '<div style="font-family:Nunito,sans-serif;font-weight:800;font-size:17px;line-height:1.2;color:#1F4D3A;margin-top:8px;">' + escapeHtml(r.title) + '</div>';
+
+    // Spacer
+    bodyHtml += '<div style="-webkit-box-flex:1;-webkit-flex:1;flex:1;"></div>';
+
+    // Meta row
+    if (r.cookTime || r.servings) {
+      bodyHtml += '<div style="display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;border-top:1px solid #EFEADD;padding-top:9px;margin-top:10px;font-family:Nunito,sans-serif;font-weight:700;font-size:12px;color:#3d5a4a;">';
+      if (r.cookTime) {
+        bodyHtml += '<span style="display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;margin-right:14px;">' + clockSvg + escapeHtml(r.cookTime) + '</span>';
+      }
+      if (r.servings) {
+        bodyHtml += '<span style="display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;">' + personSvg + escapeHtml(r.servings) + '<span style="color:#6E8F6B;margin-left:3px;">serv</span></span>';
+      }
+      bodyHtml += '</div>';
+    }
+    bodyHtml += '</div>';
+
+    card.innerHTML = phHtml + favHtml + bodyHtml;
 
     (function(recipeId) {
       card.onclick = function() { showRecipeDetail(recipeId); };
     })(r.id);
 
-    listEl.appendChild(card);
+    col.appendChild(card);
+    grid.appendChild(col);
   }
 
-  // Lazy-load thumbnails: use IntersectionObserver where available (modern browsers),
-  // fall back to loading all at once (iOS 9)
+  listEl.appendChild(grid);
+
+  // Lazy-load photos into the .card-ph panel
   function loadThumbForCard(card) {
     var recipeId = card.getAttribute('data-id');
     loadRecipeImage(recipeId, function(imageData) {
       if (!imageData) return;
-      // Card may have been removed from DOM if list re-rendered
       if (!card.parentNode) return;
-      var thumb = document.createElement('img');
-      thumb.src = imageData;
-      thumb.className = 'recipe-card-thumb';
-      card.insertBefore(thumb, card.firstChild);
+      var ph = card.querySelector('.card-ph');
+      if (ph) {
+        ph.innerHTML = '';
+        ph.style.backgroundImage = 'url(' + imageData + ')';
+        ph.style.backgroundSize = 'cover';
+        ph.style.backgroundPosition = 'center';
+      }
     });
   }
 
-  var allCards = listEl.querySelectorAll('.recipe-card[data-id]');
+  var allCards = listEl.querySelectorAll('.card-grid .card-col [data-id]');
   if (window.IntersectionObserver) {
     var thumbObserver = new IntersectionObserver(function(entries) {
       for (var i = 0; i < entries.length; i++) {
