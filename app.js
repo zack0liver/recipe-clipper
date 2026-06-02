@@ -25,6 +25,7 @@ var detailLargeText = false;
 var currentSort = localStorage.getItem('rc_sort') || 'date';
 var editingImageData = '';        // base64 data URL, '' = no image
 var editingHasExistingImage = false; // true if recipe had an image when editing started
+var editingPlaceholderIcon = 'plate';
 var searchDebounceTimer = null;
 var loadingRecipes = false;
 
@@ -462,6 +463,7 @@ function saveRecipe() {
     sourceUrl: document.getElementById('edit-source').value.trim(),
     tags: tags,
     notes: document.getElementById('edit-notes').value.trim(),
+    placeholderIcon: editingPlaceholderIcon || 'plate',
     updatedAt: now
   };
 
@@ -550,6 +552,7 @@ function recipeToFirestoreFields(r) {
   fields.cookTime = { stringValue: r.cookTime || '' };
   fields.sourceUrl = { stringValue: r.sourceUrl || '' };
   fields.notes = { stringValue: r.notes || '' };
+  fields.placeholderIcon = { stringValue: r.placeholderIcon || 'plate' };
   fields.createdAt = { integerValue: String(r.createdAt || Date.now()) };
   fields.updatedAt = { integerValue: String(r.updatedAt || Date.now()) };
   fields.favorite = { booleanValue: r.favorite === true };
@@ -604,7 +607,8 @@ function firestoreDocToRecipe(doc) {
     instructions: fsArr(f.instructions),
     tags: fsArr(f.tags),
     favorite: fsBool(f.favorite),
-    madeLog: fsMadeLog(f.madeLog)
+    madeLog: fsMadeLog(f.madeLog),
+    placeholderIcon: fsStr(f.placeholderIcon) || 'plate'
   };
 }
 
@@ -1060,7 +1064,6 @@ function renderRecipeList() {
   var clockSvg = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1F4D3A" stroke-width="2" style="margin-right:5px;vertical-align:middle;"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2" stroke-linecap="round"/></svg>';
   var personSvg = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1F4D3A" stroke-width="2" style="margin-right:5px;vertical-align:middle;"><circle cx="12" cy="8" r="3.4"/><path d="M5.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6" stroke-linecap="round"/></svg>';
   var starSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="#F2C14E" stroke="#caa12f" stroke-width="1"><polygon points="12,2 15,9 22,9.3 16.5,14 18.5,21 12,17 5.5,21 7.5,14 2,9.3 9,9"/></svg>';
-  var plateSrc = 'design_handoff_nombook/recipe-cards/recipe-plate.svg';
 
   var grid = document.createElement('div');
   grid.className = 'card-grid';
@@ -1076,8 +1079,9 @@ function renderRecipeList() {
     card.style.cssText = 'position:relative;background:#fff;border:1px solid #E7E3D6;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(31,77,58,.06);display:-webkit-box;display:-webkit-flex;display:flex;min-height:168px;cursor:pointer;';
 
     // Photo panel (placeholder until lazy load fills it)
+    var iconSrc = 'design_handoff_nombook/brand/icon-' + (r.placeholderIcon || 'plate') + '.svg';
     var phHtml = '<div class="card-ph" style="width:42%;min-width:42%;background:#FFF6E7;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;">' +
-      '<img src="' + plateSrc + '" style="width:60%;max-width:120px;opacity:.85;" alt=""></div>';
+      '<img src="' + iconSrc + '" style="width:60%;max-width:120px;opacity:.85;" alt=""></div>';
 
     // Favorite badge
     var favHtml = r.favorite
@@ -1311,6 +1315,8 @@ function editCurrentRecipe() {
   document.getElementById('edit-source').value = recipe.sourceUrl || '';
   document.getElementById('extract-url').value = '';
   document.getElementById('extract-status').textContent = '';
+  editingPlaceholderIcon = recipe.placeholderIcon || 'plate';
+  selectPlaceholderIcon(editingPlaceholderIcon);
 
   showView('edit');
 }
@@ -1344,6 +1350,18 @@ function clearEditForm() {
   document.getElementById('extract-status').textContent = '';
   removeEditImage();
   editingHasExistingImage = false;
+  editingPlaceholderIcon = 'plate';
+  selectPlaceholderIcon('plate');
+}
+
+function selectPlaceholderIcon(name) {
+  editingPlaceholderIcon = name;
+  var picks = document.querySelectorAll('.icon-pick');
+  for (var i = 0; i < picks.length; i++) {
+    var selected = picks[i].getAttribute('data-icon') === name;
+    picks[i].style.border = selected ? '2px solid #1F4D3A' : '2px solid #E9E6DB';
+    picks[i].style.background = selected ? '#EBF1E8' : 'transparent';
+  }
 }
 
 // ============================================================
