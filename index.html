@@ -68,6 +68,7 @@
           <button id="btn-favorites-filter" class="btn-filter" onclick="toggleFavoritesFilter()">Favorites</button>
           <button id="btn-quick-meal-filter" class="btn-filter" onclick="toggleQuickMealFilter()">Quick Meal</button>
           <button id="btn-meal-prep-filter" class="btn-filter" onclick="toggleMealPrepFilter()">Meal Prep</button>
+          <button id="btn-drafts-filter" class="btn-filter" onclick="toggleDraftsFilter()">To Finish</button>
           <button id="btn-clear-filters" class="btn-link btn-clear-filters" style="display:none;" onclick="clearFilters()">Clear</button>
         </div>
         <div class="sort-row">
@@ -85,6 +86,11 @@
           <p id="empty-auth-msg">Sign in to start saving recipes.</p>
         </div>
       </div>
+      <button id="btn-quick-add" class="btn-fab btn-fab-quick" onclick="startQuickAdd()" title="Quick add — screenshot or link">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M13 2 L4 13 h6 l-1 9 l9-13 h-6 z"></path>
+        </svg>
+      </button>
       <button id="btn-add" class="btn-fab" onclick="startAddRecipe()">+</button>
     </div>
   </div>
@@ -192,6 +198,10 @@
       <div id="detail-made-info" class="detail-made-info" style="display:none;"></div>
       <div id="detail-tags" class="detail-tags"></div>
 
+      <div id="detail-draft-banner" style="display:none; background:#FBEFCF; border:1px solid #f0dca2; color:#8a6410; border-radius:10px; padding:10px 14px; margin-bottom:14px; font-size:14px;">
+        Quick clip saved to finish later. Tap <strong>Edit</strong> to add the ingredients and steps.
+      </div>
+
       <div id="detail-image-section" style="display:none; margin-bottom:16px;">
         <img id="detail-image" style="max-width:400px; width:100%; height:auto; border-radius:10px; display:block; margin:0 auto;">
       </div>
@@ -221,6 +231,38 @@
         <button class="btn-accent" onclick="editCurrentRecipe()">Edit</button>
         <button class="btn-danger" onclick="deleteCurrentRecipe()">Delete</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ============ QUICK ADD VIEW ============ -->
+  <div id="view-quickadd" class="view" style="display:none;">
+    <div class="container">
+      <h2>Quick Add</h2>
+      <p style="color:#6E8F6B; margin-top:-4px; margin-bottom:18px;">Grab a screenshot or link now, finish the recipe later.</p>
+
+      <div class="form-group">
+        <label>Screenshot / Photo</label>
+        <img id="quick-image-preview" style="display:none; max-width:100%; border-radius:8px; margin-bottom:8px;">
+        <input type="file" id="quick-image-input" accept="image/*"
+               style="display:none;" onchange="handleQuickAddImage(this)">
+        <button type="button" class="btn-accent btn-block"
+                onclick="document.getElementById('quick-image-input').click()">Choose Screenshot</button>
+        <button type="button" class="btn-link" id="btn-quick-remove-photo"
+                style="display:none; margin-top:8px;" onclick="removeQuickAddImage()">Remove photo</button>
+      </div>
+
+      <div class="form-group">
+        <label for="quick-url">Link (optional)</label>
+        <input type="url" id="quick-url" placeholder="Paste the post or recipe URL">
+      </div>
+
+      <div class="form-group">
+        <label for="quick-title">Title (optional)</label>
+        <input type="text" id="quick-title" placeholder="A name so you remember it">
+      </div>
+
+      <button class="btn-primary btn-block" onclick="saveQuickAdd()">Save for Later</button>
+      <button class="btn-secondary btn-block" onclick="cancelQuickAdd()">Cancel</button>
     </div>
   </div>
 

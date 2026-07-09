@@ -852,6 +852,31 @@ body.light-mode .sort-row {
   vertical-align: middle;
 }
 
+/* Quick Add FAB — stacked above the + FAB, gold to stand out */
+.btn-fab-quick {
+  bottom: 92px;
+  background: #F2C14E;
+  color: #1F4D3A;
+  line-height: 56px;
+}
+
+.btn-fab-quick:active {
+  background: #e0ad38;
+}
+
+body.light-mode .btn-fab-quick {
+  background: #F2C14E;
+  color: #1F4D3A;
+}
+
+body.light-mode .btn-fab-quick:active {
+  background: #e0ad38;
+}
+
+.btn-fab-quick svg {
+  vertical-align: middle;
+}
+
 /* Card grid — 1 col default, 2 col at 720px */
 .card-grid { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; margin: 0 -8px; }
 .card-col { width: 100%; padding: 0 8px; margin-bottom: 16px; }
