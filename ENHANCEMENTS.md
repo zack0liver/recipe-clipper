@@ -1,5 +1,15 @@
 # NomBook — Enhancements
 
+## Compatibility Constraint
+
+**Every enhancement below must run on an old iPad 2 — iOS 9.3.5 / Safari 9.** This is a hard requirement; anything that breaks on that device is not shippable.
+
+- **JS: ES5 only.** No `fetch`, `Promise`, `async`/`await`, arrow functions, `let`/`const`, or template literals. Avoid modern `Array`/`Object`/`String` methods too (`Array.from`, `.includes`, `Object.assign`, `.startsWith`, etc.) — they don't exist in Safari 9.
+- **Networking: `XMLHttpRequest` + callbacks only.** Reuse the existing `xhrGet`/`xhrPost`/`xhrPatch`/`xhrDelete` helpers in `app.js`. Firebase is accessed via REST — no Firebase JS SDK (it requires ES6).
+- **Feature-detect and fall back** for anything newer. Model to follow: the `IntersectionObserver` guard in `app.js` that loads all thumbnails when the API is unavailable.
+- **LLM / AI-style ideas** (#14, #15, #20) must route any external call through XHR (or a server-side component), never `fetch`/`async`.
+- See `PLAN.md` and `brand/nombook-brand-spec.md` for the fuller platform-constraint lists.
+
 ## Existing
 1. Offline mode — cache recipes in localStorage for viewing without internet
 2. Image support — display recipe images from extracted data
@@ -39,3 +49,9 @@
 22. **Shopping list** — Automatically aggregate ingredients from all recipes in the current weekly meal plan into a single grocery list. Tap items to check them off while shopping. Ingredients from the same recipe are grouped, and duplicate ingredients across recipes are combined. Shareable as plain text for sending to a family member.
 
 23. ~~**Clip recipes from social media videos**~~ — **Done.** Paste an Instagram, Facebook, or YouTube Shorts URL and NomBook fetches the post caption via existing CORS proxies, parses ingredients and steps using text heuristics, and pre-fills the edit form. Falls back to dumping the full caption in Notes if no structured recipe is detected. LLM-powered version remains a future enhancement.
+
+## New (Session 2)
+
+24. ~~**Quick Add from a screenshot**~~ — **Done.** A gold lightning-bolt FAB on the list opens a stripped-down "Quick Add" screen: pick a screenshot from the photo library (reuses the existing `compressImage`/`saveRecipeImage` pipeline), optionally paste a link and type a title, then Save. Designed for two-tap capture from a phone. If no title is entered, one is auto-derived from the link (e.g. "Instagram clip · Jul 9").
+
+25. ~~**Save for later / drafts**~~ — **Done.** Quick-added items are stored as drafts (`draft` boolean on the recipe doc). Drafts show a "To Finish" badge on their card, are filterable via a "To Finish" pill, and display a banner in the detail view prompting you to Edit and fill in ingredients/steps. Saving from the full editor clears the draft flag. Editor saves now also preserve `favorite`/`madeLog` (previously wiped by the full-document write).

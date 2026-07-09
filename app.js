@@ -28,6 +28,8 @@ var editingHasExistingImage = false; // true if recipe had an image when editing
 var editingPlaceholderIcon = 'plate';
 var searchDebounceTimer = null;
 var loadingRecipes = false;
+var showDraftsOnly = false;
+var quickAddImageData = '';       // base64 data URL for quick-add screenshot
 
 // ---- Init ----
 (function init() {
@@ -71,7 +73,7 @@ var loadingRecipes = false;
 // ============================================================
 
 function showView(name) {
-  var views = ['auth', 'list', 'edit', 'detail'];
+  var views = ['auth', 'list', 'edit', 'detail', 'quickadd'];
   for (var i = 0; i < views.length; i++) {
     var el = document.getElementById('view-' + views[i]);
     if (el) el.style.display = (views[i] === name) ? 'block' : 'none';
@@ -83,6 +85,8 @@ function showView(name) {
     renderRecipeList();
     var fab = document.getElementById('btn-add');
     if (fab) fab.style.display = currentUser ? 'block' : 'none';
+    var qfab = document.getElementById('btn-quick-add');
+    if (qfab) qfab.style.display = currentUser ? 'block' : 'none';
   }
   var cameraFab = document.getElementById('btn-add-photo');
   if (cameraFab) cameraFab.style.display = (name === 'detail') ? 'block' : 'none';
@@ -231,7 +235,7 @@ function updateFavoriteButton(isFav) {
 
 function updateClearFiltersBtn() {
   var btn = document.getElementById('btn-clear-filters');
-  if (btn) btn.style.display = (showFavoritesOnly || showQuickMealOnly || showMealPrepOnly) ? 'inline' : 'none';
+  if (btn) btn.style.display = (showFavoritesOnly || showQuickMealOnly || showMealPrepOnly || showDraftsOnly) ? 'inline' : 'none';
 }
 
 function toggleFavoritesFilter() {
@@ -258,11 +262,20 @@ function toggleMealPrepFilter() {
   renderRecipeList();
 }
 
+function toggleDraftsFilter() {
+  showDraftsOnly = !showDraftsOnly;
+  var btn = document.getElementById('btn-drafts-filter');
+  if (btn) btn.className = showDraftsOnly ? 'btn-filter btn-filter-active' : 'btn-filter';
+  updateClearFiltersBtn();
+  renderRecipeList();
+}
+
 function clearFilters() {
   showFavoritesOnly = false;
   showQuickMealOnly = false;
   showMealPrepOnly = false;
-  var ids = ['btn-favorites-filter', 'btn-quick-meal-filter', 'btn-meal-prep-filter'];
+  showDraftsOnly = false;
+  var ids = ['btn-favorites-filter', 'btn-quick-meal-filter', 'btn-meal-prep-filter', 'btn-drafts-filter'];
   for (var i = 0; i < ids.length; i++) {
     var btn = document.getElementById(ids[i]);
     if (btn) btn.className = 'btn-filter';
@@ -464,8 +477,21 @@ function saveRecipe() {
     tags: tags,
     notes: document.getElementById('edit-notes').value.trim(),
     placeholderIcon: editingPlaceholderIcon || 'plate',
+    draft: false,
     updatedAt: now
   };
+
+  // Preserve fields not present on the edit form when updating an existing
+  // recipe — the full-document PATCH below would otherwise wipe them.
+  if (editingRecipeId) {
+    for (var ei = 0; ei < recipes.length; ei++) {
+      if (recipes[ei].id === editingRecipeId) {
+        recipeData.favorite = recipes[ei].favorite === true;
+        recipeData.madeLog = recipes[ei].madeLog || [];
+        break;
+      }
+    }
+  }
 
   var firestoreDoc = recipeToFirestoreFields(recipeData);
 
@@ -556,6 +582,7 @@ function recipeToFirestoreFields(r) {
   fields.createdAt = { integerValue: String(r.createdAt || Date.now()) };
   fields.updatedAt = { integerValue: String(r.updatedAt || Date.now()) };
   fields.favorite = { booleanValue: r.favorite === true };
+  fields.draft = { booleanValue: r.draft === true };
 
   // Arrays
   var ingValues = [];
@@ -607,6 +634,7 @@ function firestoreDocToRecipe(doc) {
     instructions: fsArr(f.instructions),
     tags: fsArr(f.tags),
     favorite: fsBool(f.favorite),
+    draft: fsBool(f.draft),
     madeLog: fsMadeLog(f.madeLog),
     placeholderIcon: fsStr(f.placeholderIcon) || 'plate'
   };
@@ -1025,6 +1053,7 @@ function renderRecipeList() {
       if (total === null || total > 20) continue;
     }
     if (showMealPrepOnly && !isMealPrep(r)) continue;
+    if (showDraftsOnly && !r.draft) continue;
     filtered.push(r);
   }
 
@@ -1050,7 +1079,7 @@ function renderRecipeList() {
   }
   emptyEl.style.display = 'none';
 
-  var anyFilter = searchVal || showFavoritesOnly || showQuickMealOnly || showMealPrepOnly;
+  var anyFilter = searchVal || showFavoritesOnly || showQuickMealOnly || showMealPrepOnly || showDraftsOnly;
   if (filtered.length === 0 && anyFilter) {
     var noMatch = document.createElement('div');
     noMatch.className = 'no-match-card';
@@ -1088,6 +1117,11 @@ function renderRecipeList() {
       ? '<div style="position:absolute;top:10px;right:10px;width:28px;height:28px;background:rgba(255,246,231,.92);border-radius:50%;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;box-shadow:0 1px 4px rgba(31,77,58,.18);z-index:2;">' + starSvg + '</div>'
       : '';
 
+    // Draft badge (top-left, over the photo panel)
+    var draftHtml = r.draft
+      ? '<div style="position:absolute;top:10px;left:10px;background:#F2C14E;color:#1F4D3A;font-family:Nunito,sans-serif;font-weight:800;font-size:9px;letter-spacing:.7px;text-transform:uppercase;padding:3px 8px;border-radius:999px;box-shadow:0 1px 4px rgba(31,77,58,.18);z-index:2;">To Finish</div>'
+      : '';
+
     // Body
     var bodyHtml = '<div style="-webkit-box-flex:1;-webkit-flex:1;flex:1;padding:14px 14px 12px;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;">';
 
@@ -1122,7 +1156,7 @@ function renderRecipeList() {
     }
     bodyHtml += '</div>';
 
-    card.innerHTML = phHtml + favHtml + bodyHtml;
+    card.innerHTML = phHtml + favHtml + draftHtml + bodyHtml;
 
     (function(recipeId) {
       card.onclick = function() { showRecipeDetail(recipeId); };
@@ -1206,6 +1240,10 @@ function showRecipeDetail(recipeId) {
 
   // Made log
   updateMadeInfo(recipe.madeLog);
+
+  // Draft banner
+  var draftBanner = document.getElementById('detail-draft-banner');
+  if (draftBanner) draftBanner.style.display = recipe.draft ? 'block' : 'none';
 
   // Tags
   var tagsEl = document.getElementById('detail-tags');
@@ -1362,6 +1400,133 @@ function selectPlaceholderIcon(name) {
     picks[i].style.border = selected ? '2px solid #1F4D3A' : '2px solid #E9E6DB';
     picks[i].style.background = selected ? '#EBF1E8' : 'transparent';
   }
+}
+
+// ============================================================
+// QUICK ADD (screenshot + link, finish later)
+// ============================================================
+
+function startQuickAdd() {
+  if (!currentUser) {
+    showToast('Please sign in first');
+    showView('auth');
+    return;
+  }
+  quickAddImageData = '';
+  var preview = document.getElementById('quick-image-preview');
+  if (preview) { preview.src = ''; preview.style.display = 'none'; }
+  var removeBtn = document.getElementById('btn-quick-remove-photo');
+  if (removeBtn) removeBtn.style.display = 'none';
+  var titleEl = document.getElementById('quick-title');
+  if (titleEl) titleEl.value = '';
+  var urlEl = document.getElementById('quick-url');
+  if (urlEl) urlEl.value = '';
+  var imgInput = document.getElementById('quick-image-input');
+  if (imgInput) imgInput.value = '';
+  showView('quickadd');
+}
+
+function handleQuickAddImage(input) {
+  if (!input.files || !input.files[0]) return;
+  var file = input.files[0];
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    compressImage(e.target.result, function(compressed) {
+      quickAddImageData = compressed;
+      var preview = document.getElementById('quick-image-preview');
+      if (preview) { preview.src = compressed; preview.style.display = 'block'; }
+      var removeBtn = document.getElementById('btn-quick-remove-photo');
+      if (removeBtn) removeBtn.style.display = 'inline';
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeQuickAddImage() {
+  quickAddImageData = '';
+  var preview = document.getElementById('quick-image-preview');
+  if (preview) { preview.src = ''; preview.style.display = 'none'; }
+  var removeBtn = document.getElementById('btn-quick-remove-photo');
+  if (removeBtn) removeBtn.style.display = 'none';
+  var input = document.getElementById('quick-image-input');
+  if (input) input.value = '';
+}
+
+// Auto-title a quick clip from its link so it is recognizable in the list.
+function deriveQuickTitle(url) {
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var d = new Date();
+  var stamp = months[d.getMonth()] + ' ' + d.getDate();
+  var label = 'Quick clip';
+  if (url) {
+    if (/instagram\.com/.test(url)) label = 'Instagram clip';
+    else if (/facebook\.com|fb\.watch/.test(url)) label = 'Facebook clip';
+    else if (/tiktok\.com/.test(url)) label = 'TikTok clip';
+    else if (/youtube\.com|youtu\.be/.test(url)) label = 'YouTube clip';
+    else {
+      var host = url.replace(/^https?:\/\//i, '').replace(/^www\./i, '');
+      var slash = host.indexOf('/');
+      if (slash !== -1) host = host.substring(0, slash);
+      if (host) label = host;
+    }
+  }
+  return label + ' · ' + stamp;
+}
+
+function cancelQuickAdd() {
+  quickAddImageData = '';
+  showView('list');
+}
+
+function saveQuickAdd() {
+  if (!currentUser) {
+    showToast('Please sign in first');
+    showView('auth');
+    return;
+  }
+  var url = document.getElementById('quick-url').value.replace(/^\s+|\s+$/g, '');
+  var typedTitle = document.getElementById('quick-title').value.replace(/^\s+|\s+$/g, '');
+  if (!quickAddImageData && !url && !typedTitle) {
+    showToast('Add a screenshot or link first');
+    return;
+  }
+
+  var now = Date.now();
+  var recipeData = {
+    title: typedTitle || deriveQuickTitle(url),
+    ingredients: [],
+    instructions: [],
+    servings: '',
+    prepTime: '',
+    cookTime: '',
+    sourceUrl: url,
+    tags: [],
+    notes: '',
+    placeholderIcon: 'notes',
+    draft: true,
+    favorite: false,
+    madeLog: [],
+    createdAt: now,
+    updatedAt: now
+  };
+  var imageToSave = quickAddImageData;
+  var createDoc = recipeToFirestoreFields(recipeData);
+
+  refreshTokenIfNeeded(function() {
+    xhrPost(recipesPath(), JSON.stringify({ fields: createDoc }), function(err, data) {
+      if (err || !data || !data.name) {
+        showToast('Save failed — try again');
+        return;
+      }
+      var parts = data.name.split('/');
+      recipeData.id = parts[parts.length - 1];
+      recipes.unshift(recipeData);
+      if (imageToSave) saveRecipeImage(recipeData.id, imageToSave);
+      quickAddImageData = '';
+      showToast('Saved — finish it later');
+      showView('list');
+    }, currentUser.idToken);
+  });
 }
 
 // ============================================================
