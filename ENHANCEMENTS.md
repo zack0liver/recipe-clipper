@@ -1,5 +1,15 @@
 # NomBook — Enhancements
 
+## Compatibility Constraint
+
+**Every enhancement below must run on an old iPad 2 — iOS 9.3.5 / Safari 9.** This is a hard requirement; anything that breaks on that device is not shippable.
+
+- **JS: ES5 only.** No `fetch`, `Promise`, `async`/`await`, arrow functions, `let`/`const`, or template literals. Avoid modern `Array`/`Object`/`String` methods too (`Array.from`, `.includes`, `Object.assign`, `.startsWith`, etc.) — they don't exist in Safari 9.
+- **Networking: `XMLHttpRequest` + callbacks only.** Reuse the existing `xhrGet`/`xhrPost`/`xhrPatch`/`xhrDelete` helpers in `app.js`. Firebase is accessed via REST — no Firebase JS SDK (it requires ES6).
+- **Feature-detect and fall back** for anything newer. Model to follow: the `IntersectionObserver` guard in `app.js` that loads all thumbnails when the API is unavailable.
+- **LLM / AI-style ideas** (#14, #15, #20) must route any external call through XHR (or a server-side component), never `fetch`/`async`.
+- See `PLAN.md` and `brand/nombook-brand-spec.md` for the fuller platform-constraint lists.
+
 ## Existing
 1. Offline mode — cache recipes in localStorage for viewing without internet
 2. Image support — display recipe images from extracted data
